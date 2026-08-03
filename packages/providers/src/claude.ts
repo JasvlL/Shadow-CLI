@@ -73,6 +73,7 @@ export class ClaudeProvider implements Provider {
     const options: Options = {
       model: req.model ?? this.defaultModel,
       cwd: req.cwd,
+      effort: req.effort as any,
       abortController: controller,
       ...(this.opts.stream ? { includePartialMessages: true } : {}),
       ...this.opts.extraOptions,

@@ -33,7 +33,7 @@ export function EffortPicker({
 
   return (
     <Box flexDirection="column">
-      <Text>{shadow('◆ select an effort level (Agy only)')}</Text>
+      <Text>{shadow('◆ select an effort level')}</Text>
       {EFFORT_CHOICES.map((choice, i) => {
         const active = i === index;
         const isCurrent = choice === current;

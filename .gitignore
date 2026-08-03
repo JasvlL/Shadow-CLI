@@ -1,0 +1,5 @@
+node_modules/
+dist/
+*.tsbuildinfo
+.flick/sessions/
+.flick/logs/

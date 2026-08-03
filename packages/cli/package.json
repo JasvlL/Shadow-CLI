@@ -1,0 +1,40 @@
+{
+  "name": "flick",
+  "version": "0.1.0",
+  "description": "Multi-agent, multi-provider terminal IDE — one orchestrator over Claude and Gemini",
+  "type": "module",
+  "bin": {
+    "flick": "./dist/bin.js",
+    "shadow": "./dist/bin.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.3.220",
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "cli-highlight": "^2.1.11",
+    "diff": "^9.0.0",
+    "ink": "^5.1.0",
+    "ink-spinner": "^5.0.0",
+    "ink-text-input": "^6.0.0",
+    "marked": "^15.0.12",
+    "marked-terminal": "^7.3.0",
+    "react": "^18.3.1",
+    "tinyglobby": "^0.2.10",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@flick/core": "*",
+    "@flick/mcp": "*",
+    "@flick/providers": "*",
+    "@flick/render": "*",
+    "@flick/skills": "*",
+    "@flick/tools": "*",
+    "@flick/tui": "*"
+  }
+}

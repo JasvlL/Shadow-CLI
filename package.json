@@ -1,0 +1,25 @@
+{
+  "name": "flick-monorepo",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "npm run build -w @flick/providers -w @flick/render -w @flick/tools -w @flick/core -w @flick/skills -w @flick/mcp -w @flick/tui -w flick",
+    "dev": "npm run dev --workspace @flick/cli",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --build",
+    "flick": "node packages/cli/dist/bin.js"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

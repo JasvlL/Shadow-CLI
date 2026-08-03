@@ -1,0 +1,26 @@
+{
+  "name": "@flick/render",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean --sourcemap"
+  },
+  "dependencies": {
+    "cli-highlight": "^2.1.11",
+    "diff": "^9.0.0",
+    "marked": "^15.0.12",
+    "marked-terminal": "^7.3.0"
+  },
+  "devDependencies": {
+    "@types/diff": "^7.0.0"
+  }
+}

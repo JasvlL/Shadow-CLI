@@ -1,18 +1,12 @@
-@import "tailwindcss";
-@source "../";
-@source "../../components";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   --background: #050505;
   --foreground: #ededed;
   --primary: #f0f;
   --primary-glow: rgba(255, 0, 255, 0.4);
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
 }
 
 body {

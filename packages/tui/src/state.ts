@@ -50,6 +50,7 @@ export interface AppState {
   provider?: ProviderId;
   model?: string;
   effort?: 'low' | 'medium' | 'high';
+  license: 'free' | 'pro';
 }
 
 export function initialState(): AppState {
@@ -64,6 +65,7 @@ export function initialState(): AppState {
     approval: null,
     status: '',
     effort: 'high',
+    license: 'free',
   };
 }
 

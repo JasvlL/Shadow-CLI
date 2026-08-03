@@ -19,6 +19,7 @@ import type { LiveQuotaData, QuotaBar } from '@shadow/core';
 
 export interface UsageOverlayProps {
   usage: AppState['usage'];
+  license: 'free' | 'pro';
   onClose: () => void;
 }
 
@@ -67,16 +68,15 @@ function SessionRow({ label, value }: { label: string; value: string }) {
 
 // ─────────────────────────── Main overlay ───────────────────────────────────
 
-export function UsageOverlay({ usage, onClose }: UsageOverlayProps) {
+export function UsageOverlay({ usage, license, onClose }: UsageOverlayProps) {
   const [quotaData, setQuotaData] = useState<LiveQuotaData | null>(getCachedQuota);
   const [fetching, setFetching] = useState(false);
   const [lastFetch, setLastFetch] = useState<string>('');
 
   // Fetch live data when overlay opens, then every 30s
   const doFetch = () => {
-    if (fetching) return;
+    if (fetching || license === 'free') return; // Only fetch if PRO
     setFetching(true);
-    // Read Agy tokens from the global tracker + current session
     const globalNow = loadGlobalUsage();
     const sessAgy = usage.get('agy') ?? { input: 0, output: 0 };
     const agyWeeklyTokens = globalNow.agy.input + globalNow.agy.output;
@@ -93,16 +93,17 @@ export function UsageOverlay({ usage, onClose }: UsageOverlayProps) {
 
   useEffect(() => {
     doFetch();
-    const id = setInterval(doFetch, 30_000);
-    return () => clearInterval(id);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    if (license === 'pro') {
+      const id = setInterval(doFetch, 30_000);
+      return () => clearInterval(id);
+    }
+  }, [license]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useInput((_ch, key) => {
     if (key.escape || _ch === 'q') onClose();
     if (_ch === 'r') doFetch();
   });
 
-  // ─── Session stats from in-process tracker ───────────────────────────────
   const global = loadGlobalUsage();
   const sessionClaude = usage.get('claude') ?? { input: 0, output: 0 };
   const sessionAgy = usage.get('agy') ?? { input: 0, output: 0 };
@@ -114,23 +115,22 @@ export function UsageOverlay({ usage, onClose }: UsageOverlayProps) {
   const claudeLifetimeCost = global.claude.costEstimate + claudeSessionCost;
   const agyLifetimeCost = global.agy.costEstimate + agySessionCost;
 
-  // ─── Determine which sections to display ─────────────────────────────────
-  // We always show Shadow's own tracked session cost.
-  // The live CLI quota bars come from quotaData if available.
   const sections = quotaData?.sections ?? [];
 
   return (
     <Box
       flexDirection="column"
       borderStyle="round"
-      borderColor="cyanBright"
+      borderColor={license === 'pro' ? 'magenta' : 'cyanBright'}
       paddingX={2}
       paddingY={1}
       width={70}
     >
       {/* ── Header ── */}
       <Box justifyContent="space-between">
-        <Text bold color="cyanBright">  Models &amp; Quota</Text>
+        <Text bold color={license === 'pro' ? 'magenta' : 'cyanBright'}>
+          {license === 'pro' ? '💎 SHADOW USAGE TRACKER (PRO)' : '📊 SHADOW USAGE TRACKER (FREE)'}
+        </Text>
         <Text dimColor>{fetching ? 'fetching…' : lastFetch ? `updated ${lastFetch}` : ''}</Text>
       </Box>
 
@@ -146,42 +146,47 @@ export function UsageOverlay({ usage, onClose }: UsageOverlayProps) {
       </Box>
 
       {/* ── Live CLI quota bars ── */}
-      {sections.length > 0 ? (
-        sections.map((sec) => (
-          <Box key={sec.section} flexDirection="column">
-            <SectionHeader title={sec.section} provider={sec.provider} />
-            {sec.bars.length === 0 ? (
-              <Box marginLeft={2}>
-                <Text dimColor>No quota data available for this section.</Text>
-              </Box>
+      {license === 'pro' ? (
+        sections.length > 0 ? (
+          sections.map((sec) => (
+            <Box key={sec.section} flexDirection="column">
+              <SectionHeader title={sec.section} provider={sec.provider} />
+              {sec.bars.length === 0 ? (
+                <Box marginLeft={2}>
+                  <Text dimColor>No quota data available for this section.</Text>
+                </Box>
+              ) : (
+                sec.bars.map((bar) => <BarRow key={bar.label} bar={bar} />)
+              )}
+            </Box>
+          ))
+        ) : (
+          <Box marginTop={1} marginLeft={2} flexDirection="column">
+            {fetching ? (
+              <Text dimColor>Fetching real-time quota from APIs…</Text>
             ) : (
-              sec.bars.map((bar) => <BarRow key={bar.label} bar={bar} />)
+              <>
+                <Text dimColor>Live quota bars not available.</Text>
+                <Text dimColor>Press <Text bold>r</Text> to retry fetching.</Text>
+              </>
             )}
           </Box>
-        ))
+        )
       ) : (
         <Box marginTop={1} marginLeft={2} flexDirection="column">
-          {fetching ? (
-            <Text dimColor>Fetching quota from Claude CLI and Agy…</Text>
-          ) : (
-            <>
-              <Text dimColor>
-                Live quota bars not available.
-              </Text>
-              <Text dimColor>
-                Claude CLI stores quota in ~/.claude/ (requires Claude Pro plan).
-              </Text>
-              <Text dimColor>
-                Agy quota requires agy to be signed in and responsive.
-              </Text>
-              <Text dimColor>Press <Text bold>r</Text> to retry fetching.</Text>
-            </>
-          )}
+          <SectionHeader title="LIVE QUOTA (PRO ONLY)" provider="agy" />
+          <Box marginTop={1}>
+            <Text dimColor>🔒 Get exact real-time API quota limits and advanced tracking</Text>
+          </Box>
+          <Box>
+            <Text dimColor>   Upgrade to PRO for $9.99/mo: </Text>
+            <Text bold color="magenta">shadow auth &lt;key&gt;</Text>
+          </Box>
         </Box>
       )}
 
       {/* ── Stale warning ── */}
-      {quotaData?.stale && (
+      {license === 'pro' && quotaData?.stale && (
         <Box marginTop={1} marginLeft={2}>
           <Text color="yellow" dimColor>⚠ Showing cached data — {quotaData.stale}</Text>
         </Box>
@@ -189,7 +194,7 @@ export function UsageOverlay({ usage, onClose }: UsageOverlayProps) {
 
       {/* ── Footer ── */}
       <Box marginTop={1} borderStyle="single" borderColor="gray" paddingX={1}>
-        <Text dimColor>esc/q  Close  ·  r  Refresh quota</Text>
+        <Text dimColor>esc/q  Close{license === 'pro' ? '  ·  r  Refresh quota' : ''}</Text>
       </Box>
     </Box>
   );

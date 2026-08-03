@@ -15,6 +15,7 @@ import {
   resolveModel,
   runHooks,
   runLead,
+  loadLicense,
   type ModelChoice,
 } from '@shadow/core';
 import { discoverSkillRoots, loadSkills } from '@shadow/skills';
@@ -136,7 +137,10 @@ export function App({
     void (async () => {
       const config = await loadPermissionConfig(cwd);
       const hooks = await loadHooks(cwd).catch(() => ({}));
+      const licenseInfo = loadLicense();
+      
       if (cancelled) return;
+      setState((s) => ({ ...s, license: licenseInfo.tier }));
 
       const gate = createGate({
         config,
@@ -472,7 +476,7 @@ export function App({
   // ONLY the overlay, so it never interferes with the chat scroll area or
   // causes the live area to jump from unexpected height changes.
   if (showUsage) {
-    return <UsageOverlay usage={state.usage} onClose={() => setShowUsage(false)} />;
+    return <UsageOverlay usage={state.usage} license={state.license} onClose={() => setShowUsage(false)} />;
   }
 
   return (

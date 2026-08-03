@@ -143,7 +143,7 @@ export default function Home() {
               <li className="flex items-center gap-3"><span className="text-[#f0f]">✓</span> Priority Support</li>
               <li className="flex items-center gap-3"><span className="text-[#f0f]">✓</span> Early access to parallel agents</li>
             </ul>
-            <a href="#" onClick={(e) => { e.preventDefault(); alert('Redirecting to checkout (Gumroad/Paddle)...') }} className="w-full py-3 text-center rounded-xl bg-[#f0f] text-black font-bold glow-magenta hover:bg-fuchsia-500 transition">
+            <a href="#" className="w-full py-3 text-center rounded-xl bg-[#f0f] text-black font-bold glow-magenta hover:bg-fuchsia-500 transition">
               Upgrade to PRO
             </a>
           </div>

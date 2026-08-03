@@ -19,6 +19,7 @@ export interface LeadOptions {
   cwd: string;
   provider: ProviderId;
   model?: string;
+  effort?: 'low' | 'medium' | 'high';
   session: SessionLog;
   orchestrator: Orchestrator;
   /** Continue the provider conversation recorded in the session. */
@@ -70,12 +71,12 @@ not in the tool's roster, say so — do not substitute a different mechanism.`;
 /**
  * Tools withheld from the Claude lead.
  *
- * `Task`/`Agent` is the important one: leaving it in gives the model two delegation
+ * \`Task\`/\`Agent\` is the important one: leaving it in gives the model two delegation
  * mechanisms, and it reliably picks the built-in one, which can only reach Anthropic
  * models. Cross-provider delegation only happens if shadow's tool is the sole option.
  *
  * This is a deny-list rather than an allow-list on purpose. Bare names in the SDK's
- * `allowedTools` auto-approve a tool *before* `canUseTool` runs, which silently
+ * \`allowedTools\` auto-approve a tool *before* \`canUseTool\` runs, which silently
  * bypasses shadow's permission gate — the SDK warns about exactly this. Withholding
  * instead leaves every remaining tool falling through to the gate.
  */
@@ -88,7 +89,7 @@ function withExtra(base: string, extra?: string): string {
 
 /**
  * Run one lead turn. Yields the lead's own events; delegation activity arrives out of
- * band through `onOrchestratorEvent` because it is concurrent with this stream.
+ * band through \`onOrchestratorEvent\` because it is concurrent with this stream.
  */
 export async function* runLead(
   prompt: string,
@@ -222,6 +223,7 @@ function runAgyLead(prompt: string, opts: LeadOptions): AsyncIterable<ShadowEven
     prompt,
     cwd: opts.cwd,
     model: opts.model,
+    effort: opts.effort,
     systemPrompt: withExtra(LEAD_SYSTEM_PROMPT, opts.systemPromptExtra),
     addDirs: [opts.cwd],
     // AgyProvider always disables agy's own prompting — a spawned process cannot ask.

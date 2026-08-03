@@ -49,6 +49,7 @@ export interface AppState {
   status: string;
   provider?: ProviderId;
   model?: string;
+  effort?: 'low' | 'medium' | 'high';
 }
 
 export function initialState(): AppState {
@@ -62,6 +63,7 @@ export function initialState(): AppState {
     busy: false,
     approval: null,
     status: '',
+    effort: 'high',
   };
 }
 

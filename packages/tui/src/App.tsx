@@ -33,6 +33,7 @@ import { Prompt } from './Prompt.js';
 import { appendHistory, loadHistory } from './history.js';
 import { expandMentions } from './mentions.js';
 import { UsageOverlay } from './Usage.js';
+import { EffortPicker } from './EffortPicker.js';
 import {
   applyLeadEvent,
   delegationEnded,
@@ -64,6 +65,7 @@ const SLASH_COMMANDS: Array<[string, string]> = [
   ['/agents', 'list agents and their providers'],
   ['/provider', 'switch lead provider (claude | agy)'],
   ['/model', 'pick a model from either plan'],
+  ['/effort', 'set reasoning effort (agy only: low|medium|high)'],
   ['/plan', 'toggle plan mode — design without executing'],
   ['/usage', 'quota & cost overlay (esc to close)'],
   ['/clear', 'clear the transcript'],
@@ -89,6 +91,7 @@ export function App({
   const [planMode, setPlanMode] = useState(false);
   const [models, setModels] = useState<ModelChoice[]>([]);
   const [pickingModel, setPickingModel] = useState(false);
+  const [pickingEffort, setPickingEffort] = useState(false);
   const [showUsage, setShowUsage] = useState(false);
 
   /**
@@ -294,6 +297,10 @@ export function App({
         applyModel(match);
         return;
       }
+      case 'effort': {
+        setPickingEffort(true);
+        return;
+      }
       case 'plan':
         setPlanMode((on) => {
           setState((s) => say(s, on ? 'plan mode off — tools will execute' : 'plan mode on — nothing will execute'));
@@ -344,6 +351,7 @@ export function App({
         cwd,
         provider: on,
         model,
+        effort: state.effort,
         session,
         orchestrator,
         resume: resumedRef.current,
@@ -466,6 +474,16 @@ export function App({
           }}
           onCancel={() => setPickingModel(false)}
         />
+      ) : pickingEffort ? (
+        <EffortPicker
+          current={state.effort}
+          onSelect={(choice) => {
+            setPickingEffort(false);
+            setState((s) => ({ ...s, effort: choice }));
+            setState((s) => say(s, `reasoning effort set to ${choice}`));
+          }}
+          onCancel={() => setPickingEffort(false)}
+        />
       ) : state.approval ? (
         <Box borderStyle="round" borderColor="yellow" paddingX={1} flexDirection="column">
           <Text color="yellow" bold>{`allow ${state.approval.tool}?`}</Text>
@@ -484,6 +502,9 @@ export function App({
         </Box>
       ) : (
         <Box flexDirection="column">
+          <Box marginBottom={1}>
+            <Text dimColor>{'─'.repeat(width)}</Text>
+          </Box>
           {state.busy && (
             <Text color="yellow">
               <Spinner type="dots" />
@@ -511,6 +532,7 @@ export function App({
               dim(formatUsage(state.usage)),
               state.status ? dim(state.status) : '',
               state.busy ? dim('esc to interrupt') : '',
+              dim(`${state.model ?? provider} · ${state.effort ?? 'high'}`),
             ],
             width,
           )}

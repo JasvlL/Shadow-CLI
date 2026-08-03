@@ -1,5 +1,5 @@
 {
-  "name": "@flick/mcp",
+  "name": "@shadow/mcp",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -15,8 +15,8 @@
     "build": "tsup src/index.ts --format esm --dts --clean --sourcemap"
   },
   "dependencies": {
-    "@flick/core": "*",
-    "@flick/providers": "*",
+    "@shadow/core": "*",
+    "@shadow/providers": "*",
     "@modelcontextprotocol/sdk": "^1.12.0",
     "zod": "^4.4.3"
   }

@@ -1,6 +1,6 @@
 import { parseArgs } from 'node:util';
-import { AgyProvider, ClaudeProvider } from '@flick/providers';
-import type { FlickEvent, Provider, ProviderId } from '@flick/providers';
+import { AgyProvider, ClaudeProvider } from '@shadow/providers';
+import type { ShadowEvent, Provider, ProviderId } from '@shadow/providers';
 import {
   Orchestrator,
   SessionLog,
@@ -10,30 +10,30 @@ import {
   loadPermissionConfig,
   runHooks,
   runLead,
-} from '@flick/core';
-import { dim } from '@flick/render';
-import { flickPluginDir } from '@flick/skills';
+} from '@shadow/core';
+import { dim } from '@shadow/render';
+import { shadowPluginDir } from '@shadow/skills';
 import { UsageTally, renderLead, renderOrchestratorEvent } from './render.js';
 import { createInterface } from 'node:readline/promises';
 import { join } from 'node:path';
 
 const VERSION = '0.1.0';
 
-const USAGE = `flick ${VERSION} — multi-agent, multi-provider terminal IDE
+const USAGE = `shadow ${VERSION} — multi-agent, multi-provider terminal IDE
 
 Usage:
-  flick                        Open the interactive IDE
-  flick -p <prompt>            Run one lead turn (delegation enabled)
-  flick raw <provider> <text>  Stream a single provider run, no orchestration
-  flick init                   Create FLICK.md and .flick/ in this project
-  flick agents                 List agents defined in .flick/agents
-  flick skills [sync|new|lint] Skills shared across both providers
-  flick models [provider]      List models a provider accepts
-  flick sessions               List sessions in this workspace
-  flick doctor                 Check that each provider is reachable
-  flick auth                   Show credential status for both providers
-  flick mcp                    Run the MCP bridge on stdio (agy calls this)
-  flick bridge install         Register the bridge in agy's MCP config
+  shadow                        Open the interactive IDE
+  shadow -p <prompt>            Run one lead turn (delegation enabled)
+  shadow raw <provider> <text>  Stream a single provider run, no orchestration
+  shadow init                   Create FLICK.md and .flick/ in this project
+  shadow agents                 List agents defined in .flick/agents
+  shadow skills [sync|new|lint] Skills shared across both providers
+  shadow models [provider]      List models a provider accepts
+  shadow sessions               List sessions in this workspace
+  shadow doctor                 Check that each provider is reachable
+  shadow auth [key]             Show credential status, or activate Shadow PRO
+  shadow mcp                    Run the MCP bridge on stdio (agy calls this)
+  shadow bridge install         Register the bridge in agy's MCP config
 
 Options:
   -p, --prompt <text>   Prompt for the lead agent
@@ -66,7 +66,7 @@ function providerFor(name: string): Provider {
   }
 }
 
-async function renderRaw(stream: AsyncIterable<FlickEvent>, asJson: boolean): Promise<number> {
+async function renderRaw(stream: AsyncIterable<ShadowEvent>, asJson: boolean): Promise<number> {
   return renderLead(stream, { json: asJson, tally: new UsageTally(), provider: 'raw' });
 }
 
@@ -124,7 +124,7 @@ async function main(argv: string[]): Promise<number> {
       const [providerName, ...promptParts] = rest;
       const prompt = promptParts.join(' ');
       if (!providerName || !prompt) {
-        process.stderr.write('usage: flick raw <provider> <prompt>\n');
+        process.stderr.write('usage: shadow raw <provider> <prompt>\n');
         return 1;
       }
       const provider = providerFor(providerName);
@@ -214,7 +214,7 @@ async function main(argv: string[]): Promise<number> {
 
     case 'mcp': {
       // Nothing may be written to stdout here except MCP frames.
-      const { startMcpBridge } = await import('@flick/mcp');
+      const { startMcpBridge } = await import('@shadow/mcp');
       await startMcpBridge({ cwd });
       // The transport owns the process from here; resolve only when stdin closes.
       await new Promise<void>((resolve) => process.stdin.on('end', resolve));
@@ -223,7 +223,7 @@ async function main(argv: string[]): Promise<number> {
 
     case 'bridge': {
       if (rest[0] !== 'install') {
-        process.stderr.write('usage: flick bridge install\n');
+        process.stderr.write('usage: shadow bridge install\n');
         return 1;
       }
       const { installBridge, installHook } = await import('./bridge-install.js');
@@ -242,7 +242,26 @@ async function main(argv: string[]): Promise<number> {
     }
 
     case 'auth': {
-      // flick stores no credentials of its own — it reuses what each CLI already has,
+      const { validateLicenseKey, loadLicense } = await import('@shadow/core');
+      if (rest[0]) {
+        process.stdout.write(`Validating license key: ${rest[0]}...\n`);
+        const result = await validateLicenseKey(rest[0]);
+        if (result.active) {
+          process.stdout.write(`\x1b[32mSuccess! Shadow PRO unlocked.\x1b[0m\n`);
+        } else {
+          process.stdout.write(`\x1b[31mInvalid license key.\x1b[0m\n`);
+        }
+        return result.active ? 0 : 1;
+      }
+      
+      const license = loadLicense();
+      process.stdout.write(`Shadow Tier: ${license.tier === 'pro' ? '\x1b[32mPRO\x1b[0m' : 'Free'}\n`);
+      if (license.tier === 'pro') {
+        process.stdout.write(`License Key: ${license.key}\n`);
+      }
+      process.stdout.write(`---\n`);
+
+      // shadow stores no credentials of its own — it reuses what each CLI already has,
       // so "auth" is really a report on those two, plus how to fix each one.
       const results = await Promise.all(
         (['agy', 'claude'] as const).map(async (name) => ({
@@ -308,7 +327,7 @@ async function resolveSession(
 }
 
 async function runInteractive(cwd: string, values: Record<string, unknown>): Promise<number> {
-  const { startTui } = await import('@flick/tui');
+  const { startTui } = await import('@shadow/tui');
   const { session, resuming } = await resolveSession(cwd, values);
   await startTui({
     cwd,
@@ -370,7 +389,7 @@ async function runOneShot(
     approve: gate,
     skipPermissions: skipPermissions && !gate,
     plan: Boolean(values.plan),
-    pluginPaths: [flickPluginDir()],
+    pluginPaths: [shadowPluginDir()],
   });
 
   const code = await renderLead(stream, { json: Boolean(values.json), tally, provider });

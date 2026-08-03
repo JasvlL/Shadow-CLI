@@ -1,5 +1,5 @@
 /**
- * Registers flick's MCP bridge in agy's own config, so a Gemini lead can delegate back
+ * Registers shadow's MCP bridge in agy's own config, so a Gemini lead can delegate back
  * into Claude subagents.
  *
  * Writes to agy's user-level MCP config. The file is shared with anything else the user
@@ -66,7 +66,7 @@ function portablePath(path: string): string {
  * does the real quoting internally as an ordinary script.
  */
 function launcherPath(): string {
-  return join(homedir(), '.flick', 'bin', process.platform === 'win32' ? 'hook-gate.cmd' : 'hook-gate.sh');
+  return join(homedir(), '.shadow', 'bin', process.platform === 'win32' ? 'hook-gate.cmd' : 'hook-gate.sh');
 }
 
 async function writeLauncher(): Promise<string> {
@@ -138,7 +138,7 @@ export async function installHook(): Promise<InstallResult> {
 export async function installBridge(cwd: string): Promise<InstallResult> {
   const path = agyConfigPath();
   const entry = {
-    // argv[1] is the resolved bin.js, which is correct whether flick is run from the
+    // argv[1] is the resolved bin.js, which is correct whether shadow is run from the
     // repo, via npm link, or from a global install.
     command: process.execPath,
     args: [process.argv[1] ?? '', 'mcp'],
@@ -160,8 +160,8 @@ export async function installBridge(cwd: string): Promise<InstallResult> {
   }
 
   config.mcpServers ??= {};
-  const before = JSON.stringify(config.mcpServers.flick ?? null);
-  config.mcpServers.flick = entry;
+  const before = JSON.stringify(config.mcpServers.shadow ?? null);
+  config.mcpServers.shadow = entry;
 
   if (before === JSON.stringify(entry)) {
     return { path, action: 'unchanged', entry };

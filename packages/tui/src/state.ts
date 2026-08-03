@@ -8,8 +8,8 @@
  * turn ends, a tool when its result arrives.
  */
 
-import type { FlickEvent, ProviderId } from '@flick/providers';
-import type { DelegationRecord } from '@flick/core';
+import type { ShadowEvent, ProviderId } from '@shadow/providers';
+import type { DelegationRecord } from '@shadow/core';
 
 export type Item =
   /**
@@ -96,7 +96,7 @@ function todosFrom(name: string, input: unknown): AppState['todos'] | null {
     }));
 }
 
-export function applyLeadEvent(state: AppState, ev: FlickEvent): AppState {
+export function applyLeadEvent(state: AppState, ev: ShadowEvent): AppState {
   switch (ev.t) {
     case 'init':
       return { ...state, provider: ev.provider, model: ev.model, status: '' };

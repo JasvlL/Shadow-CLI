@@ -10,8 +10,8 @@
  */
 
 import { randomUUID } from 'node:crypto';
-import { AgyProvider, ClaudeProvider } from '@flick/providers';
-import type { FlickEvent, Provider, ProviderId, RunRequest } from '@flick/providers';
+import { AgyProvider, ClaudeProvider } from '@shadow/providers';
+import type { ShadowEvent, Provider, ProviderId, RunRequest } from '@shadow/providers';
 import type { AgentDef } from './agents.js';
 import { loadAgents } from './agents.js';
 import { loadRules } from './rules.js';
@@ -31,9 +31,9 @@ export interface DelegationRecord {
 
 /** Events the orchestrator emits alongside the lead agent's own stream. */
 export type OrchestratorEvent =
-  | { t: 'lead'; event: FlickEvent }
+  | { t: 'lead'; event: ShadowEvent }
   | { t: 'delegation_start'; record: DelegationRecord }
-  | { t: 'delegation_event'; id: string; event: FlickEvent }
+  | { t: 'delegation_event'; id: string; event: ShadowEvent }
   | { t: 'delegation_end'; record: DelegationRecord };
 
 export interface OrchestratorOptions {
@@ -73,7 +73,7 @@ function inferProvider(model?: string): ProviderId | undefined {
   return undefined;
 }
 
-/** Bounded-concurrency gate. Kept local — this is the only place flick needs one. */
+/** Bounded-concurrency gate. Kept local — this is the only place shadow needs one. */
 class Semaphore {
   private active = 0;
   private readonly waiting: Array<() => void> = [];

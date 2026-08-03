@@ -1,14 +1,14 @@
 /**
  * Visual snapshot of a representative session.
  *
- * Set `FLICK_SHOW_FRAME=1` to print the frame to stderr and eyeball the layout;
+ * Set `SHADOW_SHOW_FRAME=1` to print the frame to stderr and eyeball the layout;
  * otherwise it asserts the structural properties that make the transcript readable.
  */
 import React from 'react';
 import { Box, Static, Text } from 'ink';
 import { render } from 'ink-testing-library';
 import { describe, expect, it } from 'vitest';
-import { dim, renderStatusBar, stripAnsi } from '@flick/render';
+import { dim, renderStatusBar, stripAnsi } from '@shadow/render';
 import { TranscriptItem } from '../src/Transcript.js';
 import type { Item } from '../src/state.js';
 
@@ -68,7 +68,7 @@ describe('transcript layout', () => {
     await new Promise((resolve) => setTimeout(resolve, 300));
     const frame = lastFrame()!;
 
-    if (process.env.FLICK_SHOW_FRAME) {
+    if (process.env.SHADOW_SHOW_FRAME) {
       process.stderr.write(`\n===FRAME===\n${frame}\n===END===\n`);
     }
 

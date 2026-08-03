@@ -1,7 +1,7 @@
 /**
  * The permission gate.
  *
- * flick turns off each backend's own prompting, because a subagent has no terminal and
+ * shadow turns off each backend's own prompting, because a subagent has no terminal and
  * a backend that asks for confirmation simply stalls. That makes this file the only
  * thing standing between a model's intent and the filesystem, so it is written to fail
  * closed: anything not positively allowed goes to the user, and if there is no user to
@@ -10,7 +10,7 @@
 
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { findDestructivePattern } from '@flick/tools';
+import { findDestructivePattern } from '@shadow/tools';
 
 export type Decision = 'allow' | 'deny' | 'ask';
 
@@ -34,7 +34,7 @@ export const DEFAULT_CONFIG: PermissionConfig = {
     'read_file',
     'glob',
     'grep',
-    'mcp__flick__delegate',
+    'mcp__shadow__delegate',
     // Claude SDK
     'Read',
     'Glob',
@@ -68,7 +68,7 @@ export const DEFAULT_CONFIG: PermissionConfig = {
 };
 
 export async function loadPermissionConfig(cwd: string): Promise<PermissionConfig> {
-  const path = join(cwd, '.flick', 'config.json');
+  const path = join(cwd, '.shadow', 'config.json');
   const text = await readFile(path, 'utf8').catch(() => null);
   if (text === null) return DEFAULT_CONFIG;
   try {

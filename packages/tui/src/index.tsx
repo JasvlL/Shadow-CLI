@@ -1,7 +1,7 @@
 import React from 'react';
 import { render } from 'ink';
-import type { ProviderId } from '@flick/providers';
-import { SessionLog } from '@flick/core';
+import type { ProviderId } from '@shadow/providers';
+import { SessionLog } from '@shadow/core';
 import { App } from './App.js';
 
 export * from './state.js';

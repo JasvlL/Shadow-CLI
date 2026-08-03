@@ -1,5 +1,5 @@
 /**
- * A flick tool: a named, JSON-schema-described function the orchestrator can expose to
+ * A shadow tool: a named, JSON-schema-described function the orchestrator can expose to
  * any provider. One definition serves both the in-process Claude SDK path and the MCP
  * bridge that agy calls into, so behaviour cannot drift between the two.
  */
@@ -11,7 +11,7 @@ export interface ToolContext {
   signal?: AbortSignal;
 }
 
-export interface FlickTool<I = any> {
+export interface ShadowTool<I = any> {
   name: string;
   description: string;
   /** JSON Schema for `input`. Kept plain so it can be handed to any provider verbatim. */

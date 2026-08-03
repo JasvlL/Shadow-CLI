@@ -6,14 +6,14 @@
  * depending on which backend happened to lead — which defeats the point of running them
  * under one orchestrator.
  *
- * So flick resolves the files itself and injects the result into both system prompts.
+ * So shadow resolves the files itself and injects the result into both system prompts.
  */
 
 import { readFile, stat } from 'node:fs/promises';
 import { dirname, join, parse } from 'node:path';
 
 /** Checked in order within each directory; the first that exists wins for that level. */
-export const RULE_FILENAMES = ['FLICK.md', 'AGENTS.md', 'CLAUDE.md', 'GEMINI.md'] as const;
+export const RULE_FILENAMES = ['SHADOW.md', 'AGENTS.md', 'CLAUDE.md', 'GEMINI.md'] as const;
 
 export interface RuleFile {
   path: string;
@@ -28,7 +28,7 @@ async function readIfFile(path: string): Promise<string | null> {
 
 /** True once we reach a repository root, so the walk does not escape the project. */
 async function isRepoRoot(dir: string): Promise<boolean> {
-  for (const marker of ['.git', '.hg', '.flick']) {
+  for (const marker of ['.git', '.hg', '.shadow']) {
     if (await stat(join(dir, marker)).catch(() => null)) return true;
   }
   return false;

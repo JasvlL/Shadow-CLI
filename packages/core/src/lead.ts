@@ -5,8 +5,8 @@
  * see identical behaviour.
  */
 
-import { ClaudeProvider, AgyProvider } from '@flick/providers';
-import type { FlickEvent, ProviderId } from '@flick/providers';
+import { ClaudeProvider, AgyProvider } from '@shadow/providers';
+import type { ShadowEvent, ProviderId } from '@shadow/providers';
 import { Orchestrator, type OrchestratorEvent } from './orchestrator.js';
 import { loadRules } from './rules.js';
 import { readTranscript } from './transcript.js';
@@ -23,7 +23,7 @@ export interface LeadOptions {
   orchestrator: Orchestrator;
   /** Continue the provider conversation recorded in the session. */
   resume?: boolean;
-  /** flick's permission gate, applied to the lead's own tools as well as delegations. */
+  /** shadow's permission gate, applied to the lead's own tools as well as delegations. */
   approve?: (tool: string, input: unknown) => Promise<boolean>;
   /** Skip the gate entirely. Only for an explicit `--yes` run. */
   skipPermissions?: boolean;
@@ -31,7 +31,7 @@ export interface LeadOptions {
   stream?: boolean;
   /** Enable skills for the lead. Defaults to every skill the backend discovers. */
   skills?: string[] | 'all';
-  /** Local plugin dirs, used to surface flick's own skills to Claude. */
+  /** Local plugin dirs, used to surface shadow's own skills to Claude. */
   pluginPaths?: string[];
   /** Resolved project rules, appended to the lead system prompt. Set by runLead. */
   systemPromptExtra?: string;
@@ -53,9 +53,9 @@ export interface LeadOptions {
   signal?: AbortSignal;
 }
 
-const LEAD_SYSTEM_PROMPT = `You are the lead agent in flick, a multi-provider terminal IDE.
+const LEAD_SYSTEM_PROMPT = `You are the lead agent in shadow, a multi-provider terminal IDE.
 
-Delegation works through one tool: mcp__flick__delegate. It is the only way to reach a
+Delegation works through one tool: mcp__shadow__delegate. It is the only way to reach a
 subagent here. Subagents may run on a different model provider than you (Anthropic or
 Google); each starts with an empty context and returns only its final answer.
 
@@ -64,7 +64,7 @@ files, reading large amounts of code to answer one question, or an independent r
 Do the work yourself when it is small, or when it needs the conversation history you
 already hold. Issue several delegate calls in one turn to run them in parallel.
 
-When the user names an agent, call mcp__flick__delegate with that name. If the name is
+When the user names an agent, call mcp__shadow__delegate with that name. If the name is
 not in the tool's roster, say so — do not substitute a different mechanism.`;
 
 /**
@@ -72,16 +72,16 @@ not in the tool's roster, say so — do not substitute a different mechanism.`;
  *
  * `Task`/`Agent` is the important one: leaving it in gives the model two delegation
  * mechanisms, and it reliably picks the built-in one, which can only reach Anthropic
- * models. Cross-provider delegation only happens if flick's tool is the sole option.
+ * models. Cross-provider delegation only happens if shadow's tool is the sole option.
  *
  * This is a deny-list rather than an allow-list on purpose. Bare names in the SDK's
  * `allowedTools` auto-approve a tool *before* `canUseTool` runs, which silently
- * bypasses flick's permission gate — the SDK warns about exactly this. Withholding
+ * bypasses shadow's permission gate — the SDK warns about exactly this. Withholding
  * instead leaves every remaining tool falling through to the gate.
  */
 const LEAD_DISALLOWED_TOOLS = ['Task', 'Agent'];
 
-/** Append project rules below flick's own instructions, clearly fenced. */
+/** Append project rules below shadow's own instructions, clearly fenced. */
 function withExtra(base: string, extra?: string): string {
   return extra ? `${base}\n\n${extra}` : base;
 }
@@ -93,7 +93,7 @@ function withExtra(base: string, extra?: string): string {
 export async function* runLead(
   prompt: string,
   opts: LeadOptions,
-): AsyncIterable<FlickEvent> {
+): AsyncIterable<ShadowEvent> {
   const { session, orchestrator, cwd, provider } = opts;
 
   // Resolved here rather than left to each backend: Claude reads CLAUDE.md and agy reads
@@ -179,11 +179,11 @@ async function refreshSummary(
   }
 }
 
-function runClaudeLead(prompt: string, opts: LeadOptions): AsyncIterable<FlickEvent> {
+function runClaudeLead(prompt: string, opts: LeadOptions): AsyncIterable<ShadowEvent> {
   const claude = new ClaudeProvider({
     stream: opts.stream,
     extraOptions: {
-      mcpServers: { flick: buildDelegateServer(opts.orchestrator) },
+      mcpServers: { shadow: buildDelegateServer(opts.orchestrator) },
     },
   });
 
@@ -206,10 +206,10 @@ function runClaudeLead(prompt: string, opts: LeadOptions): AsyncIterable<FlickEv
 }
 
 /**
- * agy as lead. It cannot call flick's in-process tools directly — it reaches them
+ * agy as lead. It cannot call shadow's in-process tools directly — it reaches them
  * through the MCP bridge, which must be registered in agy's own config.
  */
-function runAgyLead(prompt: string, opts: LeadOptions): AsyncIterable<FlickEvent> {
+function runAgyLead(prompt: string, opts: LeadOptions): AsyncIterable<ShadowEvent> {
   const agy = new AgyProvider({
     env: opts.approvalEndpoint
       ? {

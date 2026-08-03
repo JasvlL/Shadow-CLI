@@ -3,14 +3,14 @@
  *
  * An agent is a markdown file with YAML-ish frontmatter, deliberately mirroring the
  * `.claude/agents/` convention so the mental model carries over. The one field that
- * matters for flick specifically is `provider`, which decides whether the agent runs
+ * matters for shadow specifically is `provider`, which decides whether the agent runs
  * on the Anthropic subscription or the Google one.
  */
 
 import { readdir, readFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import type { ProviderId } from '@flick/providers';
+import type { ProviderId } from '@shadow/providers';
 
 export interface AgentDef {
   name: string;
@@ -111,12 +111,12 @@ export function parseAgent(text: string, source: string): AgentDef | null {
  * Directories searched for agents, nearest-wins: user-level first, then the project,
  * so a project agent shadows a user agent of the same name.
  *
- * `FLICK_HOME` overrides the user-level location. Tests set it to keep the developer's
+ * `SHADOW_HOME` overrides the user-level location. Tests set it to keep the developer's
  * real agents out of the results.
  */
 export function agentDirs(cwd: string): string[] {
-  const home = process.env.FLICK_HOME ?? homedir();
-  return [join(home, '.flick', 'agents'), join(cwd, '.flick', 'agents')];
+  const home = process.env.SHADOW_HOME ?? homedir();
+  return [join(home, '.shadow', 'agents'), join(cwd, '.shadow', 'agents')];
 }
 
 export async function loadAgents(cwd: string): Promise<Map<string, AgentDef>> {

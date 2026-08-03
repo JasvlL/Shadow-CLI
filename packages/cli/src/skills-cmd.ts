@@ -1,5 +1,5 @@
 /**
- * `flick skills` — list, sync, scaffold and lint skills across both providers.
+ * `shadow skills` — list, sync, scaffold and lint skills across both providers.
  */
 
 import { mkdir, writeFile } from 'node:fs/promises';
@@ -8,16 +8,16 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import {
   discoverSkillRoots,
-  flickPluginDir,
+  shadowPluginDir,
   lintSkillBody,
   loadSkills,
   syncToAgy,
   writeClaudePluginManifest,
-} from '@flick/skills';
-import { bold, dim, green, red, truncate, yellow } from '@flick/render';
+} from '@shadow/skills';
+import { bold, dim, green, red, truncate, yellow } from '@shadow/render';
 
 const ORIGIN_LABEL: Record<string, string> = {
-  flick: 'flick',
+  shadow: 'shadow',
   'claude-user': 'claude',
   'claude-plugin': 'plugin',
   project: 'project',
@@ -47,7 +47,7 @@ export async function skillsCommand(
     case 'lint':
       return lintSkills(cwd);
     default:
-      process.stderr.write('usage: flick skills [list|sync|new <name>|lint]\n');
+      process.stderr.write('usage: shadow skills [list|sync|new <name>|lint]\n');
       return 1;
   }
 }
@@ -57,7 +57,7 @@ async function listSkills(cwd: string): Promise<number> {
   const skills = await loadSkills(roots);
 
   if (skills.length === 0) {
-    process.stdout.write('no skills found — create one with `flick skills new <name>`\n');
+    process.stdout.write('no skills found — create one with `shadow skills new <name>`\n');
     return 0;
   }
 
@@ -69,7 +69,7 @@ async function listSkills(cwd: string): Promise<number> {
     );
   }
   process.stdout.write(
-    dim(`\n${skills.length} skills from ${roots.length} roots. \`flick skills sync\` shares them with agy.\n`),
+    dim(`\n${skills.length} skills from ${roots.length} roots. \`shadow skills sync\` shares them with agy.\n`),
   );
   return 0;
 }
@@ -95,11 +95,11 @@ async function syncSkills(cwd: string, dryRun: boolean): Promise<number> {
 
 async function newSkill(name: string | undefined, cwd: string): Promise<number> {
   if (!name || !/^[a-z0-9][a-z0-9-]*$/.test(name)) {
-    process.stderr.write('usage: flick skills new <lowercase-hyphenated-name>\n');
+    process.stderr.write('usage: shadow skills new <lowercase-hyphenated-name>\n');
     return 1;
   }
 
-  const dir = join(process.env.FLICK_HOME ?? homedir(), '.flick', 'skills', name);
+  const dir = join(process.env.SHADOW_HOME ?? homedir(), '.shadow', 'skills', name);
   const file = join(dir, 'SKILL.md');
   if (existsSync(file)) {
     process.stderr.write(`${file} already exists\n`);
@@ -132,7 +132,7 @@ How the agent can tell the work succeeded.
   await mkdir(dir, { recursive: true });
   await writeFile(file, template, 'utf8');
   process.stdout.write(`created ${file}\n`);
-  process.stdout.write(dim('run `flick skills sync` to share it with agy\n'));
+  process.stdout.write(dim('run `shadow skills sync` to share it with agy\n'));
   void cwd;
   return 0;
 }

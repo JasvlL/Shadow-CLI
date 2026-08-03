@@ -1,5 +1,5 @@
 {
-  "name": "@flick/skills",
+  "name": "@shadow/skills",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -15,6 +15,6 @@
     "build": "tsup src/index.ts --format esm --dts --clean --sourcemap"
   },
   "dependencies": {
-    "@flick/core": "*"
+    "@shadow/core": "*"
   }
 }

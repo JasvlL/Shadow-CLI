@@ -11,19 +11,19 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { render } from 'ink-testing-library';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { SessionLog } from '@flick/core';
+import { SessionLog } from '@shadow/core';
 import { App } from '../src/App.js';
 
 let cwd: string;
 
 beforeAll(() => {
-  cwd = mkdtempSync(join(tmpdir(), 'flick-app-'));
+  cwd = mkdtempSync(join(tmpdir(), 'shadow-app-'));
   mkdirSync(join(cwd, 'src'), { recursive: true });
-  mkdirSync(join(cwd, '.flick', 'agents'), { recursive: true });
+  mkdirSync(join(cwd, '.shadow', 'agents'), { recursive: true });
   writeFileSync(join(cwd, 'src', 'widget.ts'), '// widget');
   writeFileSync(join(cwd, 'src', 'gadget.ts'), '// gadget');
-  // FLICK_HOME keeps the developer's real agents and history out of the test.
-  process.env.FLICK_HOME = cwd;
+  // SHADOW_HOME keeps the developer's real agents and history out of the test.
+  process.env.SHADOW_HOME = cwd;
 });
 
 const settle = (ms = 80) => new Promise((resolve) => setTimeout(resolve, ms));

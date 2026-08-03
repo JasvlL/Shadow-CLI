@@ -1,6 +1,6 @@
-import type { FlickEvent } from '@flick/providers';
-import { describeReset, fallbackProvider } from '@flick/providers';
-import type { OrchestratorEvent } from '@flick/core';
+import type { ShadowEvent } from '@shadow/providers';
+import { describeReset, fallbackProvider } from '@shadow/providers';
+import type { OrchestratorEvent } from '@shadow/core';
 import {
   dim,
   indent,
@@ -9,7 +9,7 @@ import {
   renderToolCall,
   renderToolResult,
   terminalWidth,
-} from '@flick/render';
+} from '@shadow/render';
 
 /** Running token totals, kept per provider because they bill against separate plans. */
 export class UsageTally {
@@ -59,7 +59,7 @@ export function renderOrchestratorEvent(ev: OrchestratorEvent, tally: UsageTally
 
 /** Render a lead stream to stdout. Returns a nonzero code if the run failed. */
 export async function renderLead(
-  stream: AsyncIterable<FlickEvent>,
+  stream: AsyncIterable<ShadowEvent>,
   opts: { json?: boolean; tally: UsageTally; provider: string },
 ): Promise<number> {
   let failed = false;
@@ -102,7 +102,7 @@ export async function renderLead(
           // No terminal here to ask on, so point at the command that continues with the
           // conversation intact rather than leaving the user to guess.
           process.stderr.write(
-            dim(`  continue with: flick --continue --provider ${other} -p "…"\n`),
+            dim(`  continue with: shadow --continue --provider ${other} -p "…"\n`),
           );
         }
         break;

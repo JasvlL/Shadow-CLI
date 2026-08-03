@@ -6,13 +6,13 @@
  * mid-session equivalent to starting over, which is exactly what has to stop working
  * that way — running out of quota on one plan should not cost you the thread.
  *
- * So flick reconstructs the conversation from its own session log. The JSONL already
+ * So shadow reconstructs the conversation from its own session log. The JSONL already
  * records every event with the provider that produced it; nothing about the format
  * changes here, it is only read back.
  */
 
 import { readFile } from 'node:fs/promises';
-import type { FlickEvent, ProviderId } from '@flick/providers';
+import type { ShadowEvent, ProviderId } from '@shadow/providers';
 
 export interface ToolUse {
   name: string;
@@ -32,7 +32,7 @@ interface LoggedEvent {
   kind: 'event';
   provider: ProviderId;
   at: number;
-  event: FlickEvent;
+  event: ShadowEvent;
 }
 
 /** One line of the tool call, so a handoff says *what was done*, not what was printed. */
@@ -50,7 +50,7 @@ function summarizeTool(name: string, input: unknown): string {
 /**
  * Rebuild ordered turns from a session log.
  *
- * User turns are not in the event stream — they are the prompts flick sent — so they
+ * User turns are not in the event stream — they are the prompts shadow sent — so they
  * are recorded separately as `{kind:'prompt'}` entries and interleaved here by time.
  */
 export function turnsFromLines(lines: string[]): TurnRecord[] {
@@ -68,7 +68,7 @@ export function turnsFromLines(lines: string[]): TurnRecord[] {
     try {
       entry = JSON.parse(line);
     } catch {
-      // A truncated final line is expected if flick was killed mid-write.
+      // A truncated final line is expected if shadow was killed mid-write.
       continue;
     }
 

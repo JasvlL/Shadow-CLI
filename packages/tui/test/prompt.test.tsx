@@ -23,7 +23,7 @@ const COMMANDS: Array<[string, string]> = [
 let cwd: string;
 
 beforeAll(() => {
-  cwd = mkdtempSync(join(tmpdir(), 'flick-prompt-'));
+  cwd = mkdtempSync(join(tmpdir(), 'shadow-prompt-'));
   mkdirSync(join(cwd, 'src'), { recursive: true });
   writeFileSync(join(cwd, 'src', 'agy.ts'), '// agy');
   writeFileSync(join(cwd, 'src', 'agy-parse.ts'), '// parse');

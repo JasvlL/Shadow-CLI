@@ -5,7 +5,7 @@
 import React from 'react';
 import { render } from 'ink-testing-library';
 import { describe, expect, it } from 'vitest';
-import type { ModelChoice } from '@flick/core';
+import type { ModelChoice } from '@shadow/core';
 import { ModelPicker } from '../src/ModelPicker.js';
 
 const CHOICES: ModelChoice[] = [

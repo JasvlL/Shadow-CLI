@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Box, Text, useInput } from 'ink';
-import type { ModelChoice } from '@flick/core';
-import { dim, shadow, shadowLight, shadowMist } from '@flick/render';
+import type { ModelChoice } from '@shadow/core';
+import { dim, shadow, shadowLight, shadowMist } from '@shadow/render';
 
 export interface ModelPickerProps {
   choices: ModelChoice[];
@@ -54,7 +54,7 @@ export function ModelPicker({
     return (
       <Box flexDirection="column">
         <Text>{shadow('◆ select a model')}</Text>
-        <Text>{dim('  loading models… (if this persists, run `flick auth`)')}</Text>
+        <Text>{dim('  loading models… (if this persists, run `shadow auth`)')}</Text>
       </Box>
     );
   }

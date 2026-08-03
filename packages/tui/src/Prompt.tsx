@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Box, Text, useInput } from 'ink';
-import { globTool } from '@flick/tools';
+import { globTool } from '@shadow/tools';
 import { applyCompletion, completionContext, rankCandidates } from './completion.js';
 
 export interface PromptProps {

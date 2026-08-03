@@ -1,5 +1,5 @@
 {
-  "name": "flick-monorepo",
+  "name": "shadow-monorepo",
   "private": true,
   "type": "module",
   "workspaces": [
@@ -9,12 +9,12 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "npm run build -w @flick/providers -w @flick/render -w @flick/tools -w @flick/core -w @flick/skills -w @flick/mcp -w @flick/tui -w flick",
-    "dev": "npm run dev --workspace @flick/cli",
+    "build": "npm run build -w @shadow/providers -w @shadow/render -w @shadow/tools -w @shadow/core -w @shadow/skills -w @shadow/mcp -w @shadow/tui -w @shadow/cli",
+    "dev": "npm run dev --workspace @shadow/cli",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --build",
-    "flick": "node packages/cli/dist/bin.js"
+    "shadow": "node packages/cli/dist/bin.js"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

@@ -2,13 +2,13 @@
  * The single contract every model backend implements.
  *
  * Everything above this layer — orchestrator, TUI, session log — depends only on
- * `FlickEvent` and `Provider`. That is what lets a Claude orchestrator delegate to a
+ * `ShadowEvent` and `Provider`. That is what lets a Claude orchestrator delegate to a
  * Gemini subagent without either side knowing about the other.
  */
 
 export type ProviderId = 'claude' | 'agy';
 
-export type FlickEvent =
+export type ShadowEvent =
   /** Emitted once, as soon as the backend hands us a resumable session handle. */
   | { t: 'init'; provider: ProviderId; sessionRef: string; model: string; tools: string[] }
   /** A chunk of assistant-visible prose. */
@@ -55,7 +55,7 @@ export interface RunRequest {
   /** Reasoning effort, where the backend supports it. */
   effort?: 'low' | 'medium' | 'high';
   /**
-   * When true, flick has already gated this work and the child must not prompt.
+   * When true, shadow has already gated this work and the child must not prompt.
    * Required for any headless run: with no terminal attached, a backend that asks for
    * confirmation simply stalls and returns nothing.
    */
@@ -67,7 +67,7 @@ export interface RunRequest {
    */
   sandbox?: boolean;
   /**
-   * flick's permission gate. When supplied, the backend routes its own tool calls
+   * shadow's permission gate. When supplied, the backend routes its own tool calls
    * through it instead of prompting on its own — that is what lets one gate cover both
    * the lead's tools and its subagents' delegations.
    */
@@ -84,14 +84,14 @@ export interface Provider {
   readonly id: ProviderId;
   /** Model ids this backend accepts, best-effort. Empty array if undiscoverable. */
   models(): Promise<string[]>;
-  run(req: RunRequest): AsyncIterable<FlickEvent>;
+  run(req: RunRequest): AsyncIterable<ShadowEvent>;
   /** Continue a prior conversation identified by a `sessionRef` from an `init` event. */
-  resume(sessionRef: string, req: RunRequest): AsyncIterable<FlickEvent>;
+  resume(sessionRef: string, req: RunRequest): AsyncIterable<ShadowEvent>;
   health(): Promise<HealthResult>;
 }
 
 /** Convenience: drain a run to its final text, discarding intermediate events. */
-export async function collectText(stream: AsyncIterable<FlickEvent>): Promise<string> {
+export async function collectText(stream: AsyncIterable<ShadowEvent>): Promise<string> {
   let buffered = '';
   for await (const ev of stream) {
     if (ev.t === 'text') buffered += ev.delta;

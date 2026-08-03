@@ -1,13 +1,13 @@
 /**
  * Concurrency regression test. The orchestrator runs subagents in parallel, so
  * AgyProvider must survive several simultaneous spawns without losing output.
- * Live: costs quota, gated behind FLICK_LIVE=1.
+ * Live: costs quota, gated behind SHADOW_LIVE=1.
  */
 import { describe, expect, it } from 'vitest';
 import { AgyProvider } from '../src/agy.js';
 import { collectText } from '../src/types.js';
 
-describe.skipIf(process.env.FLICK_LIVE !== '1')('AgyProvider under concurrency (live)', () => {
+describe.skipIf(process.env.SHADOW_LIVE !== '1')('AgyProvider under concurrency (live)', () => {
   it(
     'returns each run its own complete output when three run at once',
     async () => {

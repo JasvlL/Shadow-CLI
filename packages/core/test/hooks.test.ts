@@ -6,10 +6,10 @@ import { loadHooks, runHooks } from '../src/hooks.js';
 import { createGate } from '../src/permissions.js';
 
 function repo(hooks?: unknown): string {
-  const cwd = mkdtempSync(join(tmpdir(), 'flick-hooks-'));
+  const cwd = mkdtempSync(join(tmpdir(), 'shadow-hooks-'));
   if (hooks !== undefined) {
-    mkdirSync(join(cwd, '.flick'), { recursive: true });
-    writeFileSync(join(cwd, '.flick', 'hooks.json'), JSON.stringify(hooks));
+    mkdirSync(join(cwd, '.shadow'), { recursive: true });
+    writeFileSync(join(cwd, '.shadow', 'hooks.json'), JSON.stringify(hooks));
   }
   return cwd;
 }
@@ -19,7 +19,7 @@ const FAIL = process.platform === 'win32' ? 'exit 1' : 'exit 1';
 const OK = process.platform === 'win32' ? 'exit 0' : 'exit 0';
 
 describe('loadHooks', () => {
-  it('reads hooks from .flick/hooks.json', async () => {
+  it('reads hooks from .shadow/hooks.json', async () => {
     const cwd = repo({ PreToolUse: [{ matcher: 'Bash', command: 'echo hi' }] });
     const config = await loadHooks(cwd);
     expect(config.PreToolUse).toHaveLength(1);
@@ -36,9 +36,9 @@ describe('loadHooks', () => {
   });
 
   it('refuses a malformed hooks file rather than silently running nothing', async () => {
-    const cwd = mkdtempSync(join(tmpdir(), 'flick-hooks-'));
-    mkdirSync(join(cwd, '.flick'), { recursive: true });
-    writeFileSync(join(cwd, '.flick', 'hooks.json'), '{ broken');
+    const cwd = mkdtempSync(join(tmpdir(), 'shadow-hooks-'));
+    mkdirSync(join(cwd, '.shadow'), { recursive: true });
+    writeFileSync(join(cwd, '.shadow', 'hooks.json'), '{ broken');
     await expect(loadHooks(cwd)).rejects.toThrow(/not valid JSON/);
   });
 

@@ -5,12 +5,12 @@ subscription can delegate work to an agent on the other — and so the conversat
 survives switching between them.
 
 ```
-shadow                # open the IDE   (flick works too — same binary)
+shadow                # open the IDE   (shadow works too — same binary)
 shadow -p "…"         # one turn, non-interactive
 ```
 
-On-disk names stay `flick`: `~/.flick/agents`, `.flick/sessions`, and the
-`mcp__flick__delegate` tool registered in agy's config. Renaming those would orphan
+On-disk names stay `shadow`: `~/.shadow/agents`, `.shadow/sessions`, and the
+`mcp__shadow__delegate` tool registered in agy's config. Renaming those would orphan
 agents you have already installed and break the MCP bridge, so the product is Shadow and
 the plumbing keeps its old name.
 
@@ -51,6 +51,15 @@ the lead only pays for its summary.
 `shadow auth` reports on both and tells you how to fix either one. Shadow stores no
 credentials of its own — it reuses what each CLI already has.
 
+## Shadow PRO
+
+Shadow comes with a **Free tier** out of the box. You can unlock **Shadow PRO** for premium support and lifetime updates.
+
+To activate your license:
+```bash
+shadow auth SHADOW-PRO-XXXX
+```
+
 ## Install
 
 ```bash
@@ -76,7 +85,7 @@ into whatever is already there.
 | `shadow -p "…"` | One lead turn, delegation enabled |
 | `shadow --continue` | Resume the most recent session, both providers |
 | `shadow raw agy "…"` | Stream one provider directly, no orchestration |
-| `shadow agents` | List agents in `.flick/agents/` |
+| `shadow agents` | List agents in `.shadow/agents/` |
 | `shadow models [provider]` | List models a provider accepts |
 | `shadow auth` | Credential status for both providers |
 | `shadow doctor` | Reachability check |
@@ -90,11 +99,11 @@ Options: `--provider claude|agy`, `--model <id>`, `--effort low|medium|high`,
 non-interactive run has nobody to ask and the gate otherwise denies. Destructive
 commands are still refused.
 
-Agents are read from `~/.flick/agents/` (available everywhere) and `.flick/agents/`
+Agents are read from `~/.shadow/agents/` (available everywhere) and `.shadow/agents/`
 in the project (shadows the user-level one by name). Install the defaults globally with:
 
 ```bash
-mkdir -p ~/.flick/agents && cp .flick/agents/*.md ~/.flick/agents/
+mkdir -p ~/.shadow/agents && cp .shadow/agents/*.md ~/.shadow/agents/
 ```
 
 In the IDE: `/agents`, `/provider`, `/model`, `/cost`, `/clear`, `/help`, `/exit`.
@@ -102,7 +111,7 @@ Esc interrupts a running turn.
 
 ## Agents
 
-An agent is a markdown file in `.flick/agents/` (or `~/.flick/agents/` for user-level
+An agent is a markdown file in `.shadow/agents/` (or `~/.shadow/agents/` for user-level
 ones; project files shadow user files of the same name).
 
 ```markdown
@@ -182,7 +191,7 @@ You do not need to define an agent to use one:
 
 Naming a model is enough — the provider is inferred from it, the agent name is just a
 label, and several calls in one turn run concurrently. Define an agent in
-`~/.flick/agents/` when you want a reusable persona, not to improvise.
+`~/.shadow/agents/` when you want a reusable persona, not to improvise.
 
 ## Project rules
 
@@ -191,7 +200,7 @@ label, and several calls in one turn run concurrently. Define an agent in
 
 That injection is the point. Claude reads `CLAUDE.md` and agy reads `AGENTS.md`, so
 without it the same prompt would obey different rules depending on which backend
-happened to lead. Shadow resolves the files itself — `FLICK.md`, `AGENTS.md`,
+happened to lead. Shadow resolves the files itself — `SHADOW.md`, `AGENTS.md`,
 `CLAUDE.md`, `GEMINI.md`, in that order per directory — walking from the working
 directory up to the repo root. An existing repo works unchanged.
 
@@ -207,16 +216,16 @@ Claude works when a Gemini lead runs, and vice versa.
 ```bash
 shadow skills                # list, with origin and description
 shadow skills sync           # share every root with agy (--dry-run to preview)
-shadow skills new <name>     # scaffold ~/.flick/skills/<name>/SKILL.md
+shadow skills new <name>     # scaffold ~/.shadow/skills/<name>/SKILL.md
 shadow skills lint           # warn about skills that only work on one provider
 ```
 
-Roots discovered: `~/.flick/skills`, `~/.claude/skills`, every
-`~/.claude/plugins/cache/**/skills`, and `.flick|.claude|.agents/skills` in the project.
+Roots discovered: `~/.shadow/skills`, `~/.claude/skills`, every
+`~/.claude/plugins/cache/**/skills`, and `.shadow|.claude|.agents/skills` in the project.
 
 Nothing is copied. `sync` merges paths into `~/.gemini/config/skills.json`, keeping any
 entries you added yourself; Claude picks its own up through `settingSources: ['user']`,
-plus `~/.flick` as a generated local plugin.
+plus `~/.shadow` as a generated local plugin.
 
 **The portability limit is real.** The file format travels; the content does not always.
 A skill that says "use the Edit tool" is a dead end on agy, where that tool is called
@@ -226,7 +235,7 @@ rewrites, because which provider a skill targets is the author's call.
 ## How it works
 
 ```
-flick
+shadow
 ├─ providers/  one interface, two backends
 │    ClaudeProvider → @anthropic-ai/claude-agent-sdk (in-process)
 │    AgyProvider    → spawns `agy -p … --output-format stream-json`, parses NDJSON
@@ -240,7 +249,7 @@ flick
 Every backend is normalized to one event stream:
 
 ```ts
-type FlickEvent =
+type ShadowEvent =
   | { t: 'init'; provider; sessionRef; model; tools }
   | { t: 'text' | 'thinking'; delta }
   | { t: 'tool_call' | 'tool_result'; … }
@@ -253,23 +262,23 @@ That is what makes context isolation work, and a string is the only thing both b
 agree on. Several `delegate` calls in one turn run concurrently, bounded by a semaphore.
 
 **Direction matters.** Claude reaches subagents through an in-process MCP tool
-(`mcp__flick__delegate`). agy runs in its own process, so it reaches them over the stdio
+(`mcp__shadow__delegate`). agy runs in its own process, so it reaches them over the stdio
 bridge instead. Both land in the same `Orchestrator.delegate`.
 
-Sessions are JSONL under `.flick/sessions/`, one line per event. The header tracks a
+Sessions are JSONL under `.shadow/sessions/`, one line per event. The header tracks a
 conversation ref *per provider*, which is how `--continue` resumes both.
 
 ## Permissions
 
 Shadow turns off each backend's own prompting, because a subagent has no terminal — a
-backend that stops to ask simply stalls and returns nothing. **That makes flick's gate
+backend that stops to ask simply stalls and returns nothing. **That makes shadow's gate
 the only thing between a model and your filesystem.**
 
 Order: deny-list → destructive-command screen → allow-list → ask the user. The
 destructive screen sits above the allow-list on purpose, so no config entry can
 pre-approve `rm -rf`. With nothing attached to ask, the gate denies.
 
-Configure in `.flick/config.json`:
+Configure in `.shadow/config.json`:
 
 ```json
 {
@@ -289,8 +298,8 @@ same.
 
 ### Hooks
 
-`.flick/hooks.json` runs commands at lifecycle points, for **both** providers, because
-flick runs them rather than either backend:
+`.shadow/hooks.json` runs commands at lifecycle points, for **both** providers, because
+shadow runs them rather than either backend:
 
 ```json
 {
@@ -308,7 +317,7 @@ instead. The block was correct and the policy was still bypassed. If a hook is m
 a policy rather than a lint step, omit `matcher` so it applies to every tool; with a
 catch-all matcher the same request was refused outright.
 
-Hooks load only from `<cwd>/.flick/hooks.json` — never inherited from parent directories
+Hooks load only from `<cwd>/.shadow/hooks.json` — never inherited from parent directories
 — and `shadow --no-hooks` disables them.
 
 ### Plan mode
@@ -328,10 +337,10 @@ Two limits worth knowing:
 ```bash
 npm run build          # builds in dependency order — do not use --workspaces here
 npx vitest run         # 57 offline tests
-FLICK_LIVE=1 npx vitest run   # adds live tests; these spend real quota
+SHADOW_LIVE=1 npx vitest run   # adds live tests; these spend real quota
 ```
 
-Set `FLICK_DEBUG=1` to log agy NDJSON lines the parser could not understand.
+Set `SHADOW_DEBUG=1` to log agy NDJSON lines the parser could not understand.
 
 The parser is tested against NDJSON fixtures captured from real `agy` runs
 (`packages/providers/test/fixtures/`). If agy changes its output format, those tests are

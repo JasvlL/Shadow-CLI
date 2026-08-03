@@ -9,13 +9,13 @@ import {
   startTurn,
   type AppState,
 } from '../src/state.js';
-import type { FlickEvent } from '@flick/providers';
+import type { ShadowEvent } from '@shadow/providers';
 
-function fold(events: FlickEvent[], from: AppState = initialState()) {
+function fold(events: ShadowEvent[], from: AppState = initialState()) {
   return events.reduce(applyLeadEvent, from);
 }
 
-const init: FlickEvent = {
+const init: ShadowEvent = {
   t: 'init',
   provider: 'claude',
   sessionRef: 's1',

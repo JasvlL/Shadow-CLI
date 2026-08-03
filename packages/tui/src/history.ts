@@ -1,7 +1,7 @@
 /**
  * Prompt history, persisted across sessions.
  *
- * One line per prompt in `~/.flick/history`. Multi-line prompts are stored escaped so
+ * One line per prompt in `~/.shadow/history`. Multi-line prompts are stored escaped so
  * the file stays line-oriented and a partial write cannot corrupt earlier entries.
  */
 
@@ -12,7 +12,7 @@ import { dirname, join } from 'node:path';
 const MAX_ENTRIES = 500;
 
 export function historyPath(): string {
-  return join(process.env.FLICK_HOME ?? homedir(), '.flick', 'history');
+  return join(process.env.SHADOW_HOME ?? homedir(), '.shadow', 'history');
 }
 
 const encode = (text: string) => text.replace(/\\/g, '\\\\').replace(/\n/g, '\\n');

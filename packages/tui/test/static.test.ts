@@ -11,7 +11,7 @@ import { PassThrough } from 'node:stream';
 import { Box, Static, Text, render } from 'ink';
 import { describe, expect, it } from 'vitest';
 import { applyLeadEvent, initialState, type AppState } from '../src/state.js';
-import type { FlickEvent } from '@flick/providers';
+import type { ShadowEvent } from '@shadow/providers';
 
 function Harness({ committed, live }: { committed: string[]; live: string }) {
   return createElement(
@@ -62,7 +62,7 @@ describe('<Static> usage', () => {
   it('keeps committed item identity stable, which is what makes Static safe', () => {
     // If a fold ever replaced an existing item object, Static would not repaint it and
     // the transcript would silently show stale content.
-    const events: FlickEvent[] = [
+    const events: ShadowEvent[] = [
       { t: 'init', provider: 'claude', sessionRef: 's', model: 'm', tools: [] },
       { t: 'text', delta: 'one' },
       { t: 'done', text: 'one', status: 'ok' },

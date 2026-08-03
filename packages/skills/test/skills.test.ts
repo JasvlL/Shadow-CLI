@@ -6,7 +6,7 @@ import { discoverSkillRoots, loadSkills } from '../src/discover.js';
 import { lintSkillBody, syncToAgy, agySkillsConfigPath } from '../src/sync.js';
 
 let home: string;
-const savedHome = process.env.FLICK_HOME;
+const savedHome = process.env.SHADOW_HOME;
 
 function writeSkill(root: string, name: string, frontmatter: string, body = 'Do the thing.') {
   const dir = join(root, name);
@@ -16,25 +16,25 @@ function writeSkill(root: string, name: string, frontmatter: string, body = 'Do 
 }
 
 beforeEach(() => {
-  home = mkdtempSync(join(tmpdir(), 'flick-skills-home-'));
-  process.env.FLICK_HOME = home;
+  home = mkdtempSync(join(tmpdir(), 'shadow-skills-home-'));
+  process.env.SHADOW_HOME = home;
 });
 
 afterEach(() => {
-  if (savedHome === undefined) delete process.env.FLICK_HOME;
-  else process.env.FLICK_HOME = savedHome;
+  if (savedHome === undefined) delete process.env.SHADOW_HOME;
+  else process.env.SHADOW_HOME = savedHome;
 });
 
 describe('discovery', () => {
-  it('finds flick, Claude user, and project roots', async () => {
-    mkdirSync(join(home, '.flick', 'skills'), { recursive: true });
+  it('finds shadow, Claude user, and project roots', async () => {
+    mkdirSync(join(home, '.shadow', 'skills'), { recursive: true });
     mkdirSync(join(home, '.claude', 'skills'), { recursive: true });
-    const cwd = mkdtempSync(join(tmpdir(), 'flick-skills-cwd-'));
+    const cwd = mkdtempSync(join(tmpdir(), 'shadow-skills-cwd-'));
     mkdirSync(join(cwd, '.agents', 'skills'), { recursive: true });
 
     const roots = await discoverSkillRoots(cwd);
     const origins = roots.map((r) => r.origin);
-    expect(origins).toContain('flick');
+    expect(origins).toContain('shadow');
     expect(origins).toContain('claude-user');
     expect(origins).toContain('project');
   });
@@ -65,7 +65,7 @@ describe('discovery', () => {
 
 describe('loading', () => {
   it('reads name and description, and falls back to the directory name', async () => {
-    const root = join(home, '.flick', 'skills');
+    const root = join(home, '.shadow', 'skills');
     writeSkill(root, 'named', 'name: explicit\ndescription: A described skill.');
     writeSkill(root, 'unnamed', 'description: No name field.');
 
@@ -75,7 +75,7 @@ describe('loading', () => {
   });
 
   it('reads a folded block description, which is what real SKILL.md files use', async () => {
-    const root = join(home, '.flick', 'skills');
+    const root = join(home, '.shadow', 'skills');
     writeSkill(
       root,
       'folded',
@@ -89,7 +89,7 @@ describe('loading', () => {
   });
 
   it('skips directories without a SKILL.md', async () => {
-    const root = join(home, '.flick', 'skills');
+    const root = join(home, '.shadow', 'skills');
     mkdirSync(join(root, 'not-a-skill'), { recursive: true });
     writeSkill(root, 'real', 'name: real\ndescription: d');
 
@@ -100,7 +100,7 @@ describe('loading', () => {
 
 describe('sync to agy', () => {
   it('creates the config with every non-project root', async () => {
-    mkdirSync(join(home, '.flick', 'skills'), { recursive: true });
+    mkdirSync(join(home, '.shadow', 'skills'), { recursive: true });
     mkdirSync(join(home, '.claude', 'skills'), { recursive: true });
     mkdirSync(join(home, '.gemini', 'config'), { recursive: true });
 
@@ -119,7 +119,7 @@ describe('sync to agy', () => {
       join(configDir, 'skills.json'),
       JSON.stringify({ entries: [{ path: '/my/own/skills' }], somethingElse: true }),
     );
-    mkdirSync(join(home, '.flick', 'skills'), { recursive: true });
+    mkdirSync(join(home, '.shadow', 'skills'), { recursive: true });
 
     await syncToAgy(await discoverSkillRoots(home));
 
@@ -129,7 +129,7 @@ describe('sync to agy', () => {
   });
 
   it('is idempotent — a second sync changes nothing', async () => {
-    mkdirSync(join(home, '.flick', 'skills'), { recursive: true });
+    mkdirSync(join(home, '.shadow', 'skills'), { recursive: true });
     const roots = await discoverSkillRoots(home);
 
     await syncToAgy(roots);
@@ -139,7 +139,7 @@ describe('sync to agy', () => {
   });
 
   it('writes nothing when asked for a dry run', async () => {
-    mkdirSync(join(home, '.flick', 'skills'), { recursive: true });
+    mkdirSync(join(home, '.shadow', 'skills'), { recursive: true });
     const result = await syncToAgy(await discoverSkillRoots(home), true);
 
     expect(result.added.length).toBeGreaterThan(0);
@@ -150,7 +150,7 @@ describe('sync to agy', () => {
     const configDir = join(home, '.gemini', 'config');
     mkdirSync(configDir, { recursive: true });
     writeFileSync(join(configDir, 'skills.json'), '{ not json');
-    mkdirSync(join(home, '.flick', 'skills'), { recursive: true });
+    mkdirSync(join(home, '.shadow', 'skills'), { recursive: true });
 
     await expect(syncToAgy(await discoverSkillRoots(home))).rejects.toThrow(/not valid JSON/);
   });

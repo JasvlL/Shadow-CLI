@@ -57,7 +57,7 @@ export function renderMarkdown(markdown: string, width = terminalWidth()): strin
  * Streaming-safe variant.
  *
  * A partial response often ends mid-fence or mid-list, and running that through a
- * markdown parser produces flicker as the layout re-flows on every token. During
+ * markdown parser produces shadower as the layout re-flows on every token. During
  * streaming we render raw text and only format once the turn is complete.
  */
 export function renderStreamingText(text: string): string {

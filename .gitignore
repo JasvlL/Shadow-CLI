@@ -1,5 +1,11 @@
-node_modules/
-dist/
-*.tsbuildinfo
-.flick/sessions/
-.flick/logs/
+node_modules
+dist
+.shadow
+.flick
+mylog.txt
+*.pyc
+*.mjs
+*.js
+!packages/*/src/**/*.js
+!scratch*.js
+.env

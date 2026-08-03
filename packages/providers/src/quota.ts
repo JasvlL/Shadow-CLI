@@ -8,14 +8,14 @@
  * matching and should be honest that it is best-effort.
  */
 
-import type { FlickEvent, ProviderId } from './types.js';
+import type { ShadowEvent, ProviderId } from './types.js';
 
 /** Assistant-message error codes from the Claude SDK that mean "cannot continue". */
 const CLAUDE_FATAL_ERRORS = new Set(['rate_limit', 'billing_error']);
 /** Transient; the turn failed but the plan is not spent. */
 const CLAUDE_TRANSIENT_ERRORS = new Set(['overloaded', 'server_error']);
 
-export function quotaFromClaudeError(error: string | undefined): FlickEvent | null {
+export function quotaFromClaudeError(error: string | undefined): ShadowEvent | null {
   if (!error) return null;
   if (CLAUDE_FATAL_ERRORS.has(error)) {
     return {
@@ -35,10 +35,10 @@ export function quotaFromClaudeError(error: string | undefined): FlickEvent | nu
 export function quotaFromRateLimitInfo(info: {
   status?: string;
   resetsAt?: number;
-}): FlickEvent | null {
+}): ShadowEvent | null {
   if (!info?.status || info.status === 'allowed') return null;
 
-  // `resetsAt` is seconds in the SDK payload; FlickEvent uses milliseconds.
+  // `resetsAt` is seconds in the SDK payload; ShadowEvent uses milliseconds.
   const resetsAt = typeof info.resetsAt === 'number' ? info.resetsAt * 1000 : undefined;
 
   if (info.status === 'rejected') {
@@ -63,7 +63,7 @@ export function quotaFromRateLimitInfo(info: {
 const AGY_EXHAUSTED =
   /\b(quota|rate.?limit(ed)?|resource.?exhausted|too many requests|billing|insufficient.{0,20}(credit|balance)|429)\b/i;
 
-export function quotaFromAgyFailure(text: string | undefined): FlickEvent | null {
+export function quotaFromAgyFailure(text: string | undefined): ShadowEvent | null {
   if (!text || !AGY_EXHAUSTED.test(text)) return null;
   return {
     t: 'quota',

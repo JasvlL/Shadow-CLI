@@ -6,7 +6,7 @@ import { findRuleFiles, formatRules, loadRules } from '../src/rules.js';
 
 /** A temp tree with a `.git` marker, so the walk stops where a real repo would. */
 function makeRepo(): string {
-  const root = mkdtempSync(join(tmpdir(), 'flick-rules-'));
+  const root = mkdtempSync(join(tmpdir(), 'shadow-rules-'));
   mkdirSync(join(root, '.git'), { recursive: true });
   return root;
 }
@@ -14,22 +14,22 @@ function makeRepo(): string {
 describe('findRuleFiles', () => {
   it('finds a rule file at the repo root', async () => {
     const root = makeRepo();
-    writeFileSync(join(root, 'FLICK.md'), 'Always answer in Catalan.');
+    writeFileSync(join(root, 'SHADOW.md'), 'Always answer in Catalan.');
 
     const files = await findRuleFiles(root);
     expect(files).toHaveLength(1);
     expect(files[0]!.content).toBe('Always answer in Catalan.');
   });
 
-  it('prefers FLICK.md over the other names in the same directory', async () => {
+  it('prefers SHADOW.md over the other names in the same directory', async () => {
     const root = makeRepo();
     writeFileSync(join(root, 'CLAUDE.md'), 'claude rules');
     writeFileSync(join(root, 'AGENTS.md'), 'agents rules');
-    writeFileSync(join(root, 'FLICK.md'), 'flick rules');
+    writeFileSync(join(root, 'SHADOW.md'), 'shadow rules');
 
     const files = await findRuleFiles(root);
     expect(files).toHaveLength(1);
-    expect(files[0]!.content).toBe('flick rules');
+    expect(files[0]!.content).toBe('shadow rules');
   });
 
   it('accepts the other CLIs’ filenames, so an existing repo works unchanged', async () => {
@@ -42,19 +42,19 @@ describe('findRuleFiles', () => {
     const root = makeRepo();
     const nested = join(root, 'packages', 'app');
     mkdirSync(nested, { recursive: true });
-    writeFileSync(join(root, 'FLICK.md'), 'root rule');
-    writeFileSync(join(nested, 'FLICK.md'), 'nested rule');
+    writeFileSync(join(root, 'SHADOW.md'), 'root rule');
+    writeFileSync(join(nested, 'SHADOW.md'), 'nested rule');
 
     const files = await findRuleFiles(nested);
     expect(files.map((f) => f.content)).toEqual(['root rule', 'nested rule']);
   });
 
   it('stops at the repo root and does not escape into parent directories', async () => {
-    const outer = mkdtempSync(join(tmpdir(), 'flick-outer-'));
-    writeFileSync(join(outer, 'FLICK.md'), 'SHOULD NOT BE READ');
+    const outer = mkdtempSync(join(tmpdir(), 'shadow-outer-'));
+    writeFileSync(join(outer, 'SHADOW.md'), 'SHOULD NOT BE READ');
     const repo = join(outer, 'repo');
     mkdirSync(join(repo, '.git'), { recursive: true });
-    writeFileSync(join(repo, 'FLICK.md'), 'repo rule');
+    writeFileSync(join(repo, 'SHADOW.md'), 'repo rule');
 
     const files = await findRuleFiles(repo);
     expect(files.map((f) => f.content)).toEqual(['repo rule']);
@@ -62,7 +62,7 @@ describe('findRuleFiles', () => {
 
   it('ignores empty rule files', async () => {
     const root = makeRepo();
-    writeFileSync(join(root, 'FLICK.md'), '   \n\n');
+    writeFileSync(join(root, 'SHADOW.md'), '   \n\n');
     expect(await findRuleFiles(root)).toEqual([]);
   });
 
@@ -73,8 +73,8 @@ describe('findRuleFiles', () => {
 
 describe('formatRules', () => {
   it('fences each file with its path so the model can attribute a rule', () => {
-    const out = formatRules([{ path: '/repo/FLICK.md', content: 'be terse' }]);
-    expect(out).toContain('<rules from="/repo/FLICK.md">');
+    const out = formatRules([{ path: '/repo/SHADOW.md', content: 'be terse' }]);
+    expect(out).toContain('<rules from="/repo/SHADOW.md">');
     expect(out).toContain('be terse');
   });
 
@@ -85,11 +85,11 @@ describe('formatRules', () => {
   it('drops the outermost files first when over budget, keeping the most specific', () => {
     const big = 'x'.repeat(20_000);
     const out = formatRules([
-      { path: '/repo/FLICK.md', content: big },
-      { path: '/repo/app/FLICK.md', content: big },
+      { path: '/repo/SHADOW.md', content: big },
+      { path: '/repo/app/SHADOW.md', content: big },
     ]);
     // Only one fits; it must be the nearest one.
-    expect(out).toContain('/repo/app/FLICK.md');
-    expect(out).not.toContain('<rules from="/repo/FLICK.md">');
+    expect(out).toContain('/repo/app/SHADOW.md');
+    expect(out).not.toContain('<rules from="/repo/SHADOW.md">');
   });
 });

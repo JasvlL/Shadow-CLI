@@ -3,10 +3,10 @@
  *
  * The point of this file: a skill you wrote for Claude becomes usable by a Gemini lead,
  * and vice versa, **without copying files**. Each CLI keeps loading skills its own way,
- * with its own progressive disclosure; flick only tells each one where to look.
+ * with its own progressive disclosure; shadow only tells each one where to look.
  *
  * - agy reads `~/.gemini/config/skills.json` → `{"entries":[{"path":"..."}]}`.
- * - Claude discovers `~/.claude/skills` and its plugins on its own; flick's own skills
+ * - Claude discovers `~/.claude/skills` and its plugins on its own; shadow's own skills
  *   reach it as a generated local plugin passed via the SDK's `plugins` option.
  */
 
@@ -15,18 +15,18 @@ import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import type { SkillRoot } from './discover.js';
 
-function flickHome(): string {
-  return process.env.FLICK_HOME ?? homedir();
+function shadowHome(): string {
+  return process.env.SHADOW_HOME ?? homedir();
 }
 
 export function agySkillsConfigPath(): string {
-  const dir = process.env.AGY_CONFIG_DIR ?? join(flickHome(), '.gemini', 'config');
+  const dir = process.env.AGY_CONFIG_DIR ?? join(shadowHome(), '.gemini', 'config');
   return join(dir, 'skills.json');
 }
 
-/** Directory of the generated plugin that exposes flick's own skills to Claude. */
-export function flickPluginDir(): string {
-  return join(flickHome(), '.flick');
+/** Directory of the generated plugin that exposes shadow's own skills to Claude. */
+export function shadowPluginDir(): string {
+  return join(shadowHome(), '.shadow');
 }
 
 export interface SyncResult {
@@ -37,7 +37,7 @@ export interface SyncResult {
 }
 
 /**
- * Point agy at every root flick knows about.
+ * Point agy at every root shadow knows about.
  *
  * Merges: entries the user added by hand are preserved, and roots already present are
  * not duplicated. Never rewrites the file when nothing would change.
@@ -83,18 +83,18 @@ export async function syncToAgy(roots: SkillRoot[], dryRun = false): Promise<Syn
 }
 
 /**
- * Generate the manifest that makes `~/.flick` a loadable Claude plugin.
+ * Generate the manifest that makes `~/.shadow` a loadable Claude plugin.
  *
  * Claude finds `~/.claude/skills` by itself, so this exists purely so that skills
- * written under `~/.flick/skills` — flick's own home — are visible to Claude too.
+ * written under `~/.shadow/skills` — shadow's own home — are visible to Claude too.
  */
 export async function writeClaudePluginManifest(): Promise<string> {
-  const dir = flickPluginDir();
+  const dir = shadowPluginDir();
   const manifestPath = join(dir, '.claude-plugin', 'plugin.json');
   const manifest = {
-    name: 'flick',
+    name: 'shadow',
     version: '0.1.0',
-    description: "Skills shared across flick's model providers.",
+    description: "Skills shared across shadow's model providers.",
   };
 
   await mkdir(dirname(manifestPath), { recursive: true });

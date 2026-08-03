@@ -9,7 +9,7 @@ import { ToolError } from '../src/types.js';
 let cwd: string;
 
 beforeEach(() => {
-  cwd = mkdtempSync(join(tmpdir(), 'flick-tools-'));
+  cwd = mkdtempSync(join(tmpdir(), 'shadow-tools-'));
   mkdirSync(join(cwd, 'src'));
   writeFileSync(join(cwd, 'src', 'a.ts'), 'export const alpha = 1;\nexport const beta = 2;\n');
   writeFileSync(join(cwd, 'src', 'b.ts'), 'import { alpha } from "./a";\n');

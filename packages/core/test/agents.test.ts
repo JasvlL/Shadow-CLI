@@ -6,13 +6,13 @@ import { loadAgents, parseAgent, parseFrontmatter } from '../src/agents.js';
 
 // Point the user-level agent directory at an empty temp dir, so these tests see only
 // what they create and not whatever the developer has installed in their home.
-const savedHome = process.env.FLICK_HOME;
+const savedHome = process.env.SHADOW_HOME;
 beforeAll(() => {
-  process.env.FLICK_HOME = mkdtempSync(join(tmpdir(), 'flick-home-'));
+  process.env.SHADOW_HOME = mkdtempSync(join(tmpdir(), 'shadow-home-'));
 });
 afterAll(() => {
-  if (savedHome === undefined) delete process.env.FLICK_HOME;
-  else process.env.FLICK_HOME = savedHome;
+  if (savedHome === undefined) delete process.env.SHADOW_HOME;
+  else process.env.SHADOW_HOME = savedHome;
 });
 
 describe('frontmatter', () => {
@@ -58,13 +58,13 @@ describe('parseAgent', () => {
 
 describe('loadAgents', () => {
   it('picks up user-level agents as well as project ones', async () => {
-    const home = process.env.FLICK_HOME!;
-    const userDir = join(home, '.flick', 'agents');
+    const home = process.env.SHADOW_HOME!;
+    const userDir = join(home, '.shadow', 'agents');
     mkdirSync(userDir, { recursive: true });
     writeFileSync(join(userDir, 'u.md'), '---\nname: shared\nmodel: from-user\n---\nU');
 
-    const cwd = mkdtempSync(join(tmpdir(), 'flick-shadow-'));
-    const projectDir = join(cwd, '.flick', 'agents');
+    const cwd = mkdtempSync(join(tmpdir(), 'shadow-shadow-'));
+    const projectDir = join(cwd, '.shadow', 'agents');
     mkdirSync(projectDir, { recursive: true });
     writeFileSync(join(projectDir, 'p.md'), '---\nname: shared\nmodel: from-project\n---\nP');
 
@@ -76,8 +76,8 @@ describe('loadAgents', () => {
   });
 
   it('loads every markdown agent in the workspace', async () => {
-    const cwd = mkdtempSync(join(tmpdir(), 'flick-agents-'));
-    const dir = join(cwd, '.flick', 'agents');
+    const cwd = mkdtempSync(join(tmpdir(), 'shadow-agents-'));
+    const dir = join(cwd, '.shadow', 'agents');
     mkdirSync(dir, { recursive: true });
     writeFileSync(join(dir, 'a.md'), '---\nname: alpha\nprovider: agy\n---\nA');
     writeFileSync(join(dir, 'b.md'), '---\nname: beta\n---\nB');
@@ -89,7 +89,7 @@ describe('loadAgents', () => {
   });
 
   it('returns empty rather than failing when no agent directory exists', async () => {
-    const cwd = mkdtempSync(join(tmpdir(), 'flick-noagents-'));
+    const cwd = mkdtempSync(join(tmpdir(), 'shadow-noagents-'));
     expect((await loadAgents(cwd)).size).toBe(0);
   });
 });

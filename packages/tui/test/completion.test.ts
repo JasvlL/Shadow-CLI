@@ -82,7 +82,7 @@ describe('@file expansion', () => {
   });
 
   it('attaches file contents while keeping the prompt text intact', async () => {
-    const cwd = mkdtempSync(join(tmpdir(), 'flick-mentions-'));
+    const cwd = mkdtempSync(join(tmpdir(), 'shadow-mentions-'));
     mkdirSync(join(cwd, 'src'), { recursive: true });
     writeFileSync(join(cwd, 'src', 'a.ts'), 'export const a = 1;');
 
@@ -93,13 +93,13 @@ describe('@file expansion', () => {
   });
 
   it('reports an unreadable path inline rather than dropping it silently', async () => {
-    const cwd = mkdtempSync(join(tmpdir(), 'flick-mentions-'));
+    const cwd = mkdtempSync(join(tmpdir(), 'shadow-mentions-'));
     const out = await expandMentions('look at @nope.ts', cwd);
     expect(out).toContain('error=');
   });
 
   it('refuses a path outside the workspace', async () => {
-    const cwd = mkdtempSync(join(tmpdir(), 'flick-mentions-'));
+    const cwd = mkdtempSync(join(tmpdir(), 'shadow-mentions-'));
     const out = await expandMentions('read @../../secrets.txt', cwd);
     expect(out).toContain('error=');
     expect(out).not.toContain('<file path="../../secrets.txt">\n');

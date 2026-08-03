@@ -1,5 +1,5 @@
 /**
- * AgyProvider — wraps the Google Antigravity CLI (`agy`) as a flick Provider.
+ * AgyProvider — wraps the Google Antigravity CLI (`agy`) as a shadow Provider.
  *
  * We drive the CLI in print mode with NDJSON output rather than calling a Google API
  * directly, so the user's existing agy subscription is what pays for the tokens. That
@@ -9,7 +9,7 @@
 
 import { spawn } from 'node:child_process';
 import { createInterface } from 'node:readline';
-import type { FlickEvent, HealthResult, Provider, RunRequest } from './types.js';
+import type { ShadowEvent, HealthResult, Provider, RunRequest } from './types.js';
 import { newAgyParseState, parseAgyLine } from './agy-parse.js';
 
 export interface AgyProviderOptions {
@@ -63,11 +63,11 @@ export class AgyProvider implements Provider {
     }
   }
 
-  run(req: RunRequest): AsyncIterable<FlickEvent> {
+  run(req: RunRequest): AsyncIterable<ShadowEvent> {
     return this.stream(this.buildArgs(req, null), req.signal);
   }
 
-  resume(sessionRef: string, req: RunRequest): AsyncIterable<FlickEvent> {
+  resume(sessionRef: string, req: RunRequest): AsyncIterable<ShadowEvent> {
     return this.stream(this.buildArgs(req, sessionRef), req.signal);
   }
 
@@ -106,7 +106,7 @@ export class AgyProvider implements Provider {
     return args;
   }
 
-  private async *stream(args: string[], signal?: AbortSignal): AsyncIterable<FlickEvent> {
+  private async *stream(args: string[], signal?: AbortSignal): AsyncIterable<ShadowEvent> {
     const child = spawn(this.bin, args, {
       cwd: process.cwd(),
       // The marker in here is what makes agy's PreToolUse hook active: without it the
@@ -128,7 +128,7 @@ export class AgyProvider implements Provider {
     });
 
     const state = newAgyParseState();
-    const queue: FlickEvent[] = [];
+    const queue: ShadowEvent[] = [];
     // Held in an object so TypeScript's control-flow analysis cannot narrow the
     // callback away across the async boundaries below.
     const waiter: { wake: (() => void) | null } = { wake: null };
@@ -142,7 +142,7 @@ export class AgyProvider implements Provider {
       fn?.();
     };
 
-    const push = (ev: FlickEvent) => {
+    const push = (ev: ShadowEvent) => {
       queue.push(ev);
       wake();
     };

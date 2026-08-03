@@ -3,14 +3,14 @@
  *
  * The timing decision here is the whole point. A summary built *at the moment of
  * handoff* would have to be written by the model that just ran out of quota — the one
- * that can no longer answer. So flick keeps the summary current **during** the session,
+ * that can no longer answer. So shadow keeps the summary current **during** the session,
  * and always generates it on the provider that is *not* leading, with that provider's
  * cheapest model. The result: switching is free of the dying plan, and the summary never
  * eats the quota you are about to need.
  */
 
-import { AgyProvider, ClaudeProvider, collectText } from '@flick/providers';
-import type { ProviderId } from '@flick/providers';
+import { AgyProvider, ClaudeProvider, collectText } from '@shadow/providers';
+import type { ProviderId } from '@shadow/providers';
 import type { TurnRecord } from './transcript.js';
 import { formatTurns } from './transcript.js';
 

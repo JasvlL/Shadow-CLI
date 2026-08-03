@@ -7,8 +7,8 @@
  * entry spends.
  */
 
-import { AgyProvider, ClaudeProvider } from '@flick/providers';
-import type { ProviderId } from '@flick/providers';
+import { AgyProvider, ClaudeProvider } from '@shadow/providers';
+import type { ProviderId } from '@shadow/providers';
 
 export interface ModelChoice {
   id: string;

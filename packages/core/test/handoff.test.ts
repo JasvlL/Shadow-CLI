@@ -126,7 +126,7 @@ describe('summary policy', () => {
 
 describe('session provider tracking', () => {
   it('remembers which provider ran last, across reopen', () => {
-    const cwd = mkdtempSync(join(tmpdir(), 'flick-session-'));
+    const cwd = mkdtempSync(join(tmpdir(), 'shadow-session-'));
     const session = SessionLog.create(cwd);
     expect(session.lastProvider()).toBeUndefined();
 
@@ -139,7 +139,7 @@ describe('session provider tracking', () => {
   });
 
   it('records prompts so the transcript has both sides', async () => {
-    const cwd = mkdtempSync(join(tmpdir(), 'flick-session-'));
+    const cwd = mkdtempSync(join(tmpdir(), 'shadow-session-'));
     const session = SessionLog.create(cwd);
     session.recordPrompt('haz algo', 'claude');
 

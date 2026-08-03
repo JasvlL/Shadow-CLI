@@ -2,9 +2,9 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { newAgyParseState, parseAgyLine } from '../src/agy-parse.js';
-import type { FlickEvent } from '../src/types.js';
+import type { ShadowEvent } from '../src/types.js';
 
-function runFixture(name: string): FlickEvent[] {
+function runFixture(name: string): ShadowEvent[] {
   const path = fileURLToPath(new URL(`./fixtures/${name}`, import.meta.url));
   const state = newAgyParseState();
   return readFileSync(path, 'utf8')

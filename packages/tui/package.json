@@ -1,5 +1,5 @@
 {
-  "name": "@flick/tui",
+  "name": "@shadow/tui",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -15,11 +15,11 @@
     "build": "tsup src/index.tsx --format esm --dts --clean --sourcemap --external react"
   },
   "dependencies": {
-    "@flick/core": "*",
-    "@flick/providers": "*",
-    "@flick/render": "*",
-    "@flick/skills": "*",
-    "@flick/tools": "*",
+    "@shadow/core": "*",
+    "@shadow/providers": "*",
+    "@shadow/render": "*",
+    "@shadow/skills": "*",
+    "@shadow/tools": "*",
     "ink": "^5.1.0",
     "ink-spinner": "^5.0.0",
     "ink-text-input": "^6.0.0",

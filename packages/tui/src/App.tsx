@@ -2,8 +2,8 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Box, Static, Text, useApp, useInput } from 'ink';
 import Spinner from 'ink-spinner';
 import TextInput from 'ink-text-input';
-import type { FlickEvent, ProviderId } from '@flick/providers';
-import { describeReset, fallbackProvider } from '@flick/providers';
+import type { ShadowEvent, ProviderId } from '@shadow/providers';
+import { describeReset, fallbackProvider } from '@shadow/providers';
 import {
   Orchestrator,
   SessionLog,
@@ -11,13 +11,14 @@ import {
   listModels,
   loadHooks,
   loadPermissionConfig,
+  recordUsage,
   resolveModel,
   runHooks,
   runLead,
   type ModelChoice,
-} from '@flick/core';
-import { discoverSkillRoots, loadSkills } from '@flick/skills';
-import { renderBanner } from '@flick/render';
+} from '@shadow/core';
+import { discoverSkillRoots, loadSkills } from '@shadow/skills';
+import { renderBanner } from '@shadow/render';
 import { ModelPicker } from './ModelPicker.js';
 import { startApprovalServer, type ApprovalServer } from './approval-server.js';
 import {
@@ -26,11 +27,12 @@ import {
   renderGutter,
   renderStatusBar,
   terminalWidth,
-} from '@flick/render';
+} from '@shadow/render';
 import { LiveTurn, TranscriptItem } from './Transcript.js';
 import { Prompt } from './Prompt.js';
 import { appendHistory, loadHistory } from './history.js';
 import { expandMentions } from './mentions.js';
+import { UsageOverlay } from './Usage.js';
 import {
   applyLeadEvent,
   delegationEnded,
@@ -63,7 +65,7 @@ const SLASH_COMMANDS: Array<[string, string]> = [
   ['/provider', 'switch lead provider (claude | agy)'],
   ['/model', 'pick a model from either plan'],
   ['/plan', 'toggle plan mode — design without executing'],
-  ['/cost', 'token usage per provider'],
+  ['/usage', 'quota & cost overlay (esc to close)'],
   ['/clear', 'clear the transcript'],
   ['/help', 'this list'],
   ['/exit', 'quit'],
@@ -87,6 +89,7 @@ export function App({
   const [planMode, setPlanMode] = useState(false);
   const [models, setModels] = useState<ModelChoice[]>([]);
   const [pickingModel, setPickingModel] = useState(false);
+  const [showUsage, setShowUsage] = useState(false);
 
   /**
    * Apply a model choice. Selecting one on the other plan is a provider switch, and
@@ -260,10 +263,16 @@ export function App({
           setState((s) => say(s, 'usage: /provider claude|agy', 'error'));
           return;
         }
+        // Show a quick cost summary before switching so the user knows what each plan spent
+        const cur = state.usage.get(provider) ?? { input: 0, output: 0 };
+        const curCost = provider === 'claude'
+          ? (cur.input * 3 / 1_000_000 + cur.output * 15 / 1_000_000)
+          : (cur.input * 3.5 / 1_000_000 + cur.output * 10.5 / 1_000_000);
+        setState((s) => say(
+          s,
+          `${provider} this session: ~$${curCost.toFixed(4)} · switching to ${next} — conversation carries over`,
+        ));
         setProvider(next);
-        // No reset: runLead sees the provider changed and carries the conversation
-        // across with a handoff, so the thread survives the switch.
-        setState((s) => say(s, `switching to ${next} — the conversation carries over`));
         return;
       }
       case 'model': {
@@ -289,6 +298,9 @@ export function App({
         return;
       case 'cost':
         setState((s) => say(s, formatUsage(s.usage)));
+        return;
+      case 'usage':
+        setShowUsage((on) => !on);
         return;
       case 'clear':
         // Keep the header: it is a committed item, and dropping it would leave the
@@ -317,11 +329,11 @@ export function App({
     on: ProviderId,
     model: string | undefined,
     reason: 'manual' | 'quota',
-  ): Promise<Extract<FlickEvent, { t: 'quota' }> | null> => {
+  ): Promise<Extract<ShadowEvent, { t: 'quota' }> | null> => {
     const orchestrator = orchestratorRef.current!;
     const controller = new AbortController();
     abortRef.current = controller;
-    let exhausted: Extract<FlickEvent, { t: 'quota' }> | null = null;
+    let exhausted: Extract<ShadowEvent, { t: 'quota' }> | null = null;
 
     try {
       const stream = runLead(text, {
@@ -346,6 +358,9 @@ export function App({
           if (ev.status === 'exhausted') exhausted = ev;
           else setState((s) => say(s, `${ev.provider}: ${ev.detail}`));
           continue;
+        }
+        if (ev.t === 'usage') {
+           recordUsage(on, ev.input, ev.output, ev.cacheRead);
         }
         setState((s) => applyLeadEvent(s, ev));
       }
@@ -402,6 +417,13 @@ export function App({
 
   const running = [...state.running.values()];
   const width = terminalWidth();
+
+  // The usage overlay is a true full-screen modal: when it's open we render
+  // ONLY the overlay, so it never interferes with the chat scroll area or
+  // causes the live area to jump from unexpected height changes.
+  if (showUsage) {
+    return <UsageOverlay usage={state.usage} onClose={() => setShowUsage(false)} />;
+  }
 
   return (
     <Box flexDirection="column">

@@ -16,7 +16,7 @@ export interface BannerInfo {
   model: string;
   /**
    * Providers configured for this session. Not health-checked: verifying costs a round
-   * trip per plan, and the banner must not delay the prompt. `flick auth` reports on
+   * trip per plan, and the banner must not delay the prompt. `shadow auth` reports on
    * credentials.
    */
   ready: string[];

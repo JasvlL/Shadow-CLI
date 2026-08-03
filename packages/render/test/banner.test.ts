@@ -17,7 +17,7 @@ const info = {
 describe('banner', () => {
   it('answers model, cwd and what to type next', () => {
     const out = stripAnsi(renderBanner(info, 80));
-    if (process.env.FLICK_SHOW_FRAME) process.stderr.write(`\n${renderBanner(info, 80)}\n`);
+    if (process.env.SHADOW_SHOW_FRAME) process.stderr.write(`\n${renderBanner(info, 80)}\n`);
 
     expect(out).toContain(`Welcome to ${PRODUCT}`);
     expect(out).toContain('sonnet');

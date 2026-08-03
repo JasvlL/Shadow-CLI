@@ -1,7 +1,7 @@
 import { readFile, writeFile, mkdir, stat } from 'node:fs/promises';
 import { dirname, isAbsolute, relative, resolve } from 'node:path';
 import { glob } from 'tinyglobby';
-import { ToolError, type FlickTool, type ToolContext } from './types.js';
+import { ToolError, type ShadowTool, type ToolContext } from './types.js';
 
 /**
  * Resolve a user-supplied path against the workspace and refuse to leave it.
@@ -18,7 +18,7 @@ export function resolveInside(cwd: string, path: string): string {
 
 const MAX_READ_BYTES = 400_000;
 
-export const readTool: FlickTool<{ path: string; offset?: number; limit?: number }> = {
+export const readTool: ShadowTool<{ path: string; offset?: number; limit?: number }> = {
   name: 'read_file',
   description: 'Read a UTF-8 text file from the workspace, optionally a line range.',
   mutates: false,
@@ -50,7 +50,7 @@ export const readTool: FlickTool<{ path: string; offset?: number; limit?: number
   },
 };
 
-export const writeTool: FlickTool<{ path: string; content: string }> = {
+export const writeTool: ShadowTool<{ path: string; content: string }> = {
   name: 'write_file',
   description: 'Create or overwrite a file in the workspace.',
   mutates: true,
@@ -73,7 +73,7 @@ export const writeTool: FlickTool<{ path: string; content: string }> = {
   },
 };
 
-export const editTool: FlickTool<{ path: string; find: string; replace: string; all?: boolean }> = {
+export const editTool: ShadowTool<{ path: string; find: string; replace: string; all?: boolean }> = {
   name: 'edit_file',
   description:
     'Replace an exact string in a file. Fails unless the string occurs exactly once, ' +
@@ -115,7 +115,7 @@ export const editTool: FlickTool<{ path: string; find: string; replace: string; 
   },
 };
 
-export const globTool: FlickTool<{ pattern: string; limit?: number }> = {
+export const globTool: ShadowTool<{ pattern: string; limit?: number }> = {
   name: 'glob',
   description: 'List workspace files matching a glob pattern, e.g. "src/**/*.ts".',
   mutates: false,

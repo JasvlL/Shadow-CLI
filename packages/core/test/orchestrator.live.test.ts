@@ -1,5 +1,5 @@
 /**
- * Live orchestrator tests. Gated behind FLICK_LIVE=1 because they spend real quota
+ * Live orchestrator tests. Gated behind SHADOW_LIVE=1 because they spend real quota
  * on both providers.
  */
 import { describe, expect, it } from 'vitest';
@@ -7,7 +7,7 @@ import { Orchestrator } from '../src/orchestrator.js';
 
 const repoRoot = new URL('../../../', import.meta.url).pathname.replace(/^\/([A-Z]:)/, '$1');
 
-describe.skipIf(process.env.FLICK_LIVE !== '1')('orchestrator delegation (live)', () => {
+describe.skipIf(process.env.SHADOW_LIVE !== '1')('orchestrator delegation (live)', () => {
   it(
     'delegates three scouts in parallel and each returns non-empty text',
     async () => {

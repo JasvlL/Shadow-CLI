@@ -9,13 +9,13 @@ import {
   renderToolCall,
   renderToolResult,
   terminalWidth,
-} from '@flick/render';
+} from '@shadow/render';
 import type { Item } from './state.js';
 
 /**
  * One committed transcript item.
  *
- * Everything is rendered to an ANSI string by `@flick/render` and handed to a single
+ * Everything is rendered to an ANSI string by `@shadow/render` and handed to a single
  * `<Text>`: Ink cannot lay out arbitrary escape sequences across nested nodes reliably,
  * and one string per item also keeps `<Static>` cheap.
  *
@@ -101,7 +101,7 @@ export function TranscriptItem({ item }: { item: Item }) {
  *
  * Deliberately outside `<Static>`: this is the only part that repaints. Prose is shown
  * raw rather than markdown-rendered, because re-flowing a half-finished document on
- * every token is what makes a terminal UI flicker.
+ * every token is what makes a terminal UI shadower.
  */
 export function LiveTurn({
   text,

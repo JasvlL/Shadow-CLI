@@ -1,10 +1,9 @@
 {
-  "name": "flick",
+  "name": "@shadow/cli",
   "version": "0.1.0",
   "description": "Multi-agent, multi-provider terminal IDE — one orchestrator over Claude and Gemini",
   "type": "module",
   "bin": {
-    "flick": "./dist/bin.js",
     "shadow": "./dist/bin.js"
   },
   "files": [
@@ -29,12 +28,12 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@flick/core": "*",
-    "@flick/mcp": "*",
-    "@flick/providers": "*",
-    "@flick/render": "*",
-    "@flick/skills": "*",
-    "@flick/tools": "*",
-    "@flick/tui": "*"
+    "@shadow/core": "*",
+    "@shadow/mcp": "*",
+    "@shadow/providers": "*",
+    "@shadow/render": "*",
+    "@shadow/skills": "*",
+    "@shadow/tools": "*",
+    "@shadow/tui": "*"
   }
 }

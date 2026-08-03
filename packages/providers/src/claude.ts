@@ -1,15 +1,15 @@
 /**
- * ClaudeProvider — wraps @anthropic-ai/claude-agent-sdk as a flick Provider.
+ * ClaudeProvider — wraps @anthropic-ai/claude-agent-sdk as a shadow Provider.
  *
  * The SDK already owns the agent loop, tool execution, MCP clients and permission
- * plumbing, and it reuses the credentials the `claude` CLI already stored. flick's job
- * here is only translation: SDKMessage in, FlickEvent out, so the orchestrator can treat
+ * plumbing, and it reuses the credentials the `claude` CLI already stored. shadow's job
+ * here is only translation: SDKMessage in, ShadowEvent out, so the orchestrator can treat
  * a Claude run and an agy run identically.
  */
 
 import { query } from '@anthropic-ai/claude-agent-sdk';
 import type { Options, SDKMessage } from '@anthropic-ai/claude-agent-sdk';
-import type { FlickEvent, HealthResult, Provider, RunRequest } from './types.js';
+import type { ShadowEvent, HealthResult, Provider, RunRequest } from './types.js';
 import { quotaFromClaudeError, quotaFromRateLimitInfo } from './quota.js';
 
 export interface ClaudeProviderOptions {
@@ -23,7 +23,7 @@ export interface ClaudeProviderOptions {
   /** Subagent definitions handed to the SDK, keyed by agent name. */
   agents?: Options['agents'];
   mcpServers?: Options['mcpServers'];
-  /** Custom in-process tools exposed to the model, e.g. flick's `delegate`. */
+  /** Custom in-process tools exposed to the model, e.g. shadow's `delegate`. */
   extraOptions?: Partial<Options>;
 }
 
@@ -58,11 +58,11 @@ export class ClaudeProvider implements Provider {
     }
   }
 
-  run(req: RunRequest): AsyncIterable<FlickEvent> {
+  run(req: RunRequest): AsyncIterable<ShadowEvent> {
     return this.stream(req, undefined);
   }
 
-  resume(sessionRef: string, req: RunRequest): AsyncIterable<FlickEvent> {
+  resume(sessionRef: string, req: RunRequest): AsyncIterable<ShadowEvent> {
     return this.stream(req, sessionRef);
   }
 
@@ -110,7 +110,7 @@ export class ClaudeProvider implements Provider {
     } else if (req.skipPermissions) {
       options.permissionMode = 'bypassPermissions';
     } else if (req.approve) {
-      // Route the SDK's own tool calls through flick's gate. Without this the SDK has
+      // Route the SDK's own tool calls through shadow's gate. Without this the SDK has
       // no way to ask — there is no terminal attached to it — so it answers the model
       // with "needs permission" and the turn stalls having done half the work.
       const approve = req.approve;
@@ -118,14 +118,14 @@ export class ClaudeProvider implements Provider {
         const allowed = await approve(toolName, input);
         return allowed
           ? { behavior: 'allow' as const, updatedInput: input }
-          : { behavior: 'deny' as const, message: `${toolName} denied by flick` };
+          : { behavior: 'deny' as const, message: `${toolName} denied by shadow` };
       };
     }
 
     return options;
   }
 
-  private async *stream(req: RunRequest, resume?: string): AsyncIterable<FlickEvent> {
+  private async *stream(req: RunRequest, resume?: string): AsyncIterable<ShadowEvent> {
     let sessionRef = resume ?? '';
     let buffered = '';
     const streaming = Boolean(this.opts.stream);

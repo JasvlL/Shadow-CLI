@@ -6,7 +6,7 @@
  * the user already pointed at.
  */
 
-import { readTool, resolveInside } from '@flick/tools';
+import { readTool, resolveInside } from '@shadow/tools';
 
 /** Matches `@path` bounded by whitespace. Trailing punctuation is not part of the path. */
 const MENTION = /(^|\s)@([^\s]+?)([.,;:!?]?)(?=\s|$)/g;

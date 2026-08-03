@@ -1,16 +1,16 @@
 /**
  * Lifecycle hooks.
  *
- * Run by flick rather than by either backend, so the same hook fires whichever provider
+ * Run by shadow rather than by either backend, so the same hook fires whichever provider
  * is leading. A `PreToolUse` hook that exits non-zero blocks the tool, which makes this
  * part of the permission path — see `createGate` in permissions.ts.
  *
  * ⚠️ A hook is arbitrary command execution described by a file in the project. That is
  * the whole point of hooks, and also the whole risk. Two deliberate limits:
- *   - loaded only from `<cwd>/.flick/hooks.json`, never inherited from parent
+ *   - loaded only from `<cwd>/.shadow/hooks.json`, never inherited from parent
  *     directories, so opening a subdirectory of someone else's repo cannot run their
  *     hooks without you having opened that repo;
- *   - `flick --no-hooks` disables them outright.
+ *   - `shadow --no-hooks` disables them outright.
  */
 
 import { spawn } from 'node:child_process';
@@ -40,7 +40,7 @@ export interface HookOutcome {
 export async function loadHooks(cwd: string, enabled = true): Promise<HookConfig> {
   if (!enabled) return {};
 
-  const path = join(cwd, '.flick', 'hooks.json');
+  const path = join(cwd, '.shadow', 'hooks.json');
   const text = await readFile(path, 'utf8').catch(() => null);
   if (text === null || !text.trim()) return {};
 
@@ -128,9 +128,9 @@ export async function runHooks(
   if (hooks.length === 0) return [];
 
   const env: Record<string, string> = {
-    FLICK_HOOK_EVENT: event,
-    FLICK_TOOL_NAME: context.toolName ?? '',
-    FLICK_TOOL_INPUT: context.toolInput === undefined ? '' : JSON.stringify(context.toolInput),
+    SHADOW_HOOK_EVENT: event,
+    SHADOW_TOOL_NAME: context.toolName ?? '',
+    SHADOW_TOOL_INPUT: context.toolInput === undefined ? '' : JSON.stringify(context.toolInput),
   };
 
   const outcomes: HookOutcome[] = [];

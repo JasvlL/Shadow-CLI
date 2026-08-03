@@ -7,11 +7,11 @@
 
 import { createSdkMcpServer, tool } from '@anthropic-ai/claude-agent-sdk';
 import { z } from 'zod';
-import type { ProviderId } from '@flick/providers';
+import type { ProviderId } from '@shadow/providers';
 import type { Orchestrator } from './orchestrator.js';
 
 /** MCP tool name as the model sees it, once the SDK applies its naming convention. */
-export const DELEGATE_TOOL_NAME = 'mcp__flick__delegate';
+export const DELEGATE_TOOL_NAME = 'mcp__shadow__delegate';
 
 export function buildDelegateServer(orchestrator: Orchestrator) {
   const agents = orchestrator.listAgents();
@@ -20,13 +20,13 @@ export function buildDelegateServer(orchestrator: Orchestrator) {
       ? agents
           .map((a) => `- ${a.name} (${a.provider}${a.model ? `/${a.model}` : ''}): ${a.description}`)
           .join('\n')
-      : '(no agents defined yet — create .flick/agents/*.md)';
+      : '(no agents defined yet — create .shadow/agents/*.md)';
 
   return createSdkMcpServer({
-    name: 'flick',
+    name: 'shadow',
     version: '0.1.0',
     instructions:
-      'flick lets you delegate a self-contained task to a subagent, possibly running ' +
+      'shadow lets you delegate a self-contained task to a subagent, possibly running ' +
       'on a different model provider than you. The subagent starts with a blank ' +
       'context and returns only its final answer, so give it everything it needs and ' +
       'ask for exactly the output you want back.',

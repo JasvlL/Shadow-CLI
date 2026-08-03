@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { glob } from 'tinyglobby';
-import { ToolError, type FlickTool, type ToolContext } from './types.js';
+import { ToolError, type ShadowTool, type ToolContext } from './types.js';
 
 /**
  * Commands refused before the permission gate is even consulted.
@@ -32,7 +32,7 @@ export function findDestructivePattern(command: string): RegExp | null {
 
 const MAX_OUTPUT = 60_000;
 
-export const bashTool: FlickTool<{ command: string; timeout?: number }> = {
+export const bashTool: ShadowTool<{ command: string; timeout?: number }> = {
   name: 'run_command',
   description: 'Run a shell command in the workspace and return combined stdout and stderr.',
   mutates: true,
@@ -89,7 +89,7 @@ export const bashTool: FlickTool<{ command: string; timeout?: number }> = {
   },
 };
 
-export const grepTool: FlickTool<{ pattern: string; glob?: string; limit?: number }> = {
+export const grepTool: ShadowTool<{ pattern: string; glob?: string; limit?: number }> = {
   name: 'grep',
   description: 'Search workspace file contents with a regular expression.',
   mutates: false,

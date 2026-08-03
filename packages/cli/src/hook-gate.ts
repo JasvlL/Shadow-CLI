@@ -14,7 +14,7 @@
  * running we ask *it* over loopback and answer allow/deny with the result.
  */
 
-import { createGate, loadPermissionConfig } from '@flick/core';
+import { createGate, loadPermissionConfig } from '@shadow/core';
 
 /** Set by Shadow when it spawns agy. Absent means the user ran agy on their own. */
 export const SHADOW_SESSION_ENV = 'SHADOW_SESSION';

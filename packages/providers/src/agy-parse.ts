@@ -1,5 +1,5 @@
 /**
- * Pure translation of agy's `--output-format stream-json` NDJSON into FlickEvents.
+ * Pure translation of agy's `--output-format stream-json` NDJSON into ShadowEvents.
  *
  * Kept free of child_process so it can be tested against captured fixtures.
  *
@@ -10,10 +10,10 @@
  *   {"event":"result","result":{conversation_id,status,response,duration_seconds,usage}}
  *
  * Robustness rule: an unrecognized line degrades to nothing. A format change upstream
- * must not crash flick, so every field access is defensive.
+ * must not crash shadow, so every field access is defensive.
  */
 
-import type { FlickEvent } from './types.js';
+import type { ShadowEvent } from './types.js';
 import { quotaFromAgyFailure } from './quota.js';
 
 interface AgyUsage {
@@ -37,7 +37,7 @@ export function newAgyParseState(): AgyParseState {
   return { sessionRef: '', text: '', sawInit: false, announcedTools: new Set() };
 }
 
-function usageEvent(u: AgyUsage | undefined): FlickEvent | null {
+function usageEvent(u: AgyUsage | undefined): ShadowEvent | null {
   if (!u) return null;
   // agy reports a usage block on most steps; only surface ones that moved a counter.
   const input = u.input_tokens ?? 0;
@@ -49,10 +49,10 @@ function usageEvent(u: AgyUsage | undefined): FlickEvent | null {
 }
 
 /**
- * Translate one NDJSON line. Returns zero or more FlickEvents.
+ * Translate one NDJSON line. Returns zero or more ShadowEvents.
  * Never throws — malformed input yields `[]` and is the caller's cue to log.
  */
-export function parseAgyLine(line: string, state: AgyParseState): FlickEvent[] {
+export function parseAgyLine(line: string, state: AgyParseState): ShadowEvent[] {
   const trimmed = line.trim();
   if (!trimmed || !trimmed.startsWith('{')) return [];
 
@@ -64,7 +64,7 @@ export function parseAgyLine(line: string, state: AgyParseState): FlickEvent[] {
   }
   if (!msg || typeof msg !== 'object') return [];
 
-  const out: FlickEvent[] = [];
+  const out: ShadowEvent[] = [];
 
   switch (msg.event) {
     case 'init': {

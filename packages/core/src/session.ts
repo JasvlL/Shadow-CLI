@@ -2,7 +2,7 @@
  * Session persistence.
  *
  * One JSONL file per session, one line per event. The header line carries the
- * per-provider conversation refs, which is what makes `flick --continue` able to
+ * per-provider conversation refs, which is what makes `shadow --continue` able to
  * resume *both* backends rather than just the last one used.
  */
 
@@ -10,7 +10,7 @@ import { appendFileSync, mkdirSync, readFileSync, existsSync } from 'node:fs';
 import { readdir, stat } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { join } from 'node:path';
-import type { ProviderId } from '@flick/providers';
+import type { ProviderId } from '@shadow/providers';
 
 export interface SessionHeader {
   kind: 'header';
@@ -31,7 +31,7 @@ export interface StoredSummary {
 }
 
 export function sessionsDir(cwd: string): string {
-  return join(cwd, '.flick', 'sessions');
+  return join(cwd, '.shadow', 'sessions');
 }
 
 export class SessionLog {
@@ -78,7 +78,7 @@ export class SessionLog {
         else if (entry.kind === 'provider' && header) header.lastProvider = entry.provider;
         else if (entry.kind === 'summary') summary = entry.summary;
       } catch {
-        // A truncated final line is expected if flick was killed mid-write. Skip it.
+        // A truncated final line is expected if shadow was killed mid-write. Skip it.
       }
     }
     if (!header) return null;
@@ -88,7 +88,7 @@ export class SessionLog {
     return log;
   }
 
-  /** Most recently modified session in this workspace, for `flick --continue`. */
+  /** Most recently modified session in this workspace, for `shadow --continue`. */
   static async latest(cwd: string): Promise<string | null> {
     const dir = sessionsDir(cwd);
     const files = await readdir(dir).catch(() => [] as string[]);

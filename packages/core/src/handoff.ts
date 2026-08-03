@@ -7,7 +7,7 @@
  * the plot, while replaying everything verbatim is what makes it unaffordable.
  */
 
-import type { ProviderId } from '@flick/providers';
+import type { ProviderId } from '@shadow/providers';
 import type { TurnRecord } from './transcript.js';
 import { formatTurns } from './transcript.js';
 

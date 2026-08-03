@@ -12,12 +12,12 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { render } from 'ink';
 import { describe, expect, it } from 'vitest';
-import { SessionLog } from '@flick/core';
+import { SessionLog } from '@shadow/core';
 import { App } from '../src/App.js';
 
 describe('App', () => {
   it('renders a first frame with the header, prompt and usage line', async () => {
-    const cwd = mkdtempSync(join(tmpdir(), 'flick-tui-'));
+    const cwd = mkdtempSync(join(tmpdir(), 'shadow-tui-'));
     const stdout = new PassThrough();
     let painted = '';
     stdout.on('data', (chunk: Buffer) => {

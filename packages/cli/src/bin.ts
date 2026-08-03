@@ -110,12 +110,20 @@ async function main(argv: string[]): Promise<number> {
     return 0;
   }
 
-  // Bare `flick` opens the IDE, but only with a real terminal to draw on.
+  // Bare `shadow` opens the IDE, but only with a real terminal to draw on.
   if (!command && !values.prompt) {
     if (!process.stdin.isTTY) {
       process.stdout.write(USAGE);
       return 1;
     }
+    
+    // Set terminal process name and window title
+    process.title = 'shadow';
+    process.stdout.write('\x1b]0;Shadow\x07');
+    
+    // Clear screen and scrollback before starting TUI
+    process.stdout.write('\x1b[2J\x1b[3J\x1b[H');
+    
     return runInteractive(cwd, values);
   }
 

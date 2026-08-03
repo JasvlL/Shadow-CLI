@@ -124,6 +124,10 @@ export function App({
   );
 
   useEffect(() => {
+    // Re-assert the terminal title to ensure VS Code and other emulators catch it
+    process.title = 'shadow';
+    process.stdout.write('\x1b]0;Shadow\x07');
+
     let cancelled = false;
     void (async () => {
       const config = await loadPermissionConfig(cwd);

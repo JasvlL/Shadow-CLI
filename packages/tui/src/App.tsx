@@ -386,14 +386,16 @@ export function App({
     const prompt = value.trim();
     setInput('');
     if (!prompt || state.busy) return;
-    if (prompt.startsWith('/')) {
-      handleSlash(prompt);
-      return;
-    }
     if (!orchestratorRef.current) return;
 
     setHistory((h) => [...h, prompt]);
     void appendHistory(prompt);
+
+    if (prompt.startsWith('/')) {
+      handleSlash(prompt);
+      return;
+    }
+
     setState((s) => startTurn(s, prompt));
 
     try {

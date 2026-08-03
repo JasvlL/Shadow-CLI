@@ -8,7 +8,9 @@ export interface ModelPickerProps {
   /** Currently active model id, highlighted so you can see where you are. */
   current?: string;
   currentProvider: string;
+  currentEffort?: 'low' | 'medium' | 'high';
   onSelect: (choice: ModelChoice) => void;
+  onEffortChange: (effort: 'low' | 'medium' | 'high') => void;
   onCancel: () => void;
 }
 
@@ -17,6 +19,8 @@ const TIER_LABEL: Record<ModelChoice['tier'], string> = {
   balanced: 'balanced',
   fast: 'fast',
 };
+
+const EFFORT_CHOICES = ['low', 'medium', 'high'] as const;
 
 /**
  * Arrow-key model picker spanning both plans.
@@ -29,7 +33,9 @@ export function ModelPicker({
   choices,
   current,
   currentProvider,
+  currentEffort = 'high',
   onSelect,
+  onEffortChange,
   onCancel,
 }: ModelPickerProps) {
   const initial = Math.max(
@@ -40,6 +46,16 @@ export function ModelPicker({
 
   useInput((input, key) => {
     if (key.escape || (key.ctrl && input === 'c')) return onCancel();
+    
+    if (key.leftArrow || key.rightArrow) {
+      const eIdx = EFFORT_CHOICES.indexOf(currentEffort);
+      const nextIdx = key.leftArrow 
+        ? (eIdx - 1 + EFFORT_CHOICES.length) % EFFORT_CHOICES.length 
+        : (eIdx + 1) % EFFORT_CHOICES.length;
+      onEffortChange(EFFORT_CHOICES[nextIdx]!);
+      return;
+    }
+
     if (key.upArrow) return setIndex((i) => (i - 1 + choices.length) % choices.length);
     if (key.downArrow) return setIndex((i) => (i + 1) % choices.length);
     if (key.return) {
@@ -61,7 +77,7 @@ export function ModelPicker({
 
   return (
     <Box flexDirection="column">
-      <Text>{shadow('◆ select a model')}</Text>
+      <Text>{shadow('◆ select a model (use ◀ ▶ to set effort)')}</Text>
       {choices.map((choice, i) => {
         const active = i === index;
         const isCurrent = choice.id === current && choice.provider === currentProvider;
@@ -69,7 +85,14 @@ export function ModelPicker({
         const name = `${choice.id}`.padEnd(26);
         const plan = choice.provider.padEnd(7);
 
-        const row = `${marker} ${name} ${plan} ${TIER_LABEL[choice.tier].padEnd(9)} ${choice.hint}`;
+        let row = `${marker} ${name} ${plan} ${TIER_LABEL[choice.tier].padEnd(9)} ${choice.hint}`;
+        
+        if (active) {
+          row += `   ◀ ${currentEffort} effort ▶`;
+        } else if (isCurrent) {
+          row += `   [${currentEffort} effort]`;
+        }
+
         return (
           <Text key={`${choice.provider}:${choice.id}`}>
             {active ? shadowLight(row) : isCurrent ? shadowMist(row) : dim(row)}
@@ -77,7 +100,7 @@ export function ModelPicker({
         );
       })}
       <Text>
-        {dim('  ↑↓ move · enter select · esc cancel — switching plan carries the conversation over')}
+        {dim('  ↑↓ move · ◀ ▶ effort · enter select · esc cancel')}
       </Text>
     </Box>
   );

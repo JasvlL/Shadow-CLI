@@ -55,6 +55,7 @@ export interface LeadOptions {
 }
 
 const LEAD_SYSTEM_PROMPT = `You are the lead agent in shadow, a multi-provider terminal IDE.
+Always respond in the same language the user uses to speak to you.
 
 Delegation works through one tool: mcp__shadow__delegate. It is the only way to reach a
 subagent here. Subagents may run on a different model provider than you (Anthropic or

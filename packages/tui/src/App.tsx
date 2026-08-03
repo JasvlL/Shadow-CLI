@@ -64,8 +64,7 @@ const DEFAULT_MODEL: Record<ProviderId, string> = {
 const SLASH_COMMANDS: Array<[string, string]> = [
   ['/agents', 'list agents and their providers'],
   ['/provider', 'switch lead provider (claude | agy)'],
-  ['/model', 'pick a model from either plan'],
-  ['/effort', 'set reasoning effort (agy only: low|medium|high)'],
+  ['/model', 'pick a model and reasoning effort'],
   ['/plan', 'toggle plan mode — design without executing'],
   ['/usage', 'quota & cost overlay (esc to close)'],
   ['/clear', 'clear the transcript'],
@@ -468,9 +467,13 @@ export function App({
           choices={models}
           current={leadModel}
           currentProvider={provider}
+          currentEffort={state.effort}
           onSelect={(choice) => {
             setPickingModel(false);
             applyModel(choice);
+          }}
+          onEffortChange={(effort) => {
+            setState((s) => ({ ...s, effort }));
           }}
           onCancel={() => setPickingModel(false)}
         />
@@ -502,9 +505,7 @@ export function App({
         </Box>
       ) : (
         <Box flexDirection="column">
-          <Box marginBottom={1}>
-            <Text dimColor>{'─'.repeat(width)}</Text>
-          </Box>
+          <Text dimColor>{'─'.repeat(width)}</Text>
           {state.busy && (
             <Text color="yellow">
               <Spinner type="dots" />
@@ -532,7 +533,7 @@ export function App({
               dim(formatUsage(state.usage)),
               state.status ? dim(state.status) : '',
               state.busy ? dim('esc to interrupt') : '',
-              dim(`${state.model ?? provider} · ${state.effort ?? 'high'}`),
+              dim(`${leadModel ?? provider} · ${state.effort ?? 'high'}`),
             ],
             width,
           )}

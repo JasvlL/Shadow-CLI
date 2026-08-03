@@ -300,7 +300,7 @@ export function App({
       }
       case 'skill': {
         if (args.length === 0) {
-          setState((s) => say(s, 'usage: /skill [sync|new <name>|lint]', 'error'));
+          setState((s) => say(s, 'usage: /skill [sync|new <name>|clone <url>|lint]', 'error'));
           return;
         }
         setState((s) => ({ ...s, busy: true }));

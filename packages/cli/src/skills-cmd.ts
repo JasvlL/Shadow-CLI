@@ -39,15 +39,15 @@ export async function skillsCommand(
     case 'list':
       return listSkills(cwd);
     case 'sync':
-      // The flag arrives parsed, not as a positional — parseArgs strips options out of
-      // `positionals`, so scanning `rest` for it would silently never match.
       return syncSkills(cwd, Boolean(flags.dryRun));
     case 'new':
       return newSkill(rest[0], cwd);
+    case 'clone':
+      return cloneSkill(rest[0]);
     case 'lint':
       return lintSkills(cwd);
     default:
-      process.stderr.write('usage: shadow skills [list|sync|new <name>|lint]\n');
+      process.stderr.write('usage: shadow skills [list|sync|new <name>|clone <url>|lint]\n');
       return 1;
   }
 }
@@ -159,4 +159,35 @@ async function lintSkills(cwd: string): Promise<number> {
   process.stdout.write(dim(`\n${issues} issue(s). These are warnings — a skill can still be useful on one provider.\n`));
   void red;
   return 0;
+}
+
+async function cloneSkill(url: string | undefined): Promise<number> {
+  if (!url) {
+    process.stderr.write('usage: shadow skills clone <git-url>\n');
+    return 1;
+  }
+  const match = url.match(/([^\/]+)(?:\.git)?$/);
+  const repoName = match ? match[1] : 'downloaded-skill';
+  
+  const dest = join(process.env.SHADOW_HOME ?? homedir(), '.shadow', 'skills', repoName!);
+  if (existsSync(dest)) {
+    process.stderr.write(`${dest} already exists\n`);
+    return 1;
+  }
+
+  process.stdout.write(`cloning ${url} into ${dest}...\n`);
+  
+  const { exec } = await import('node:child_process');
+  const { promisify } = await import('node:util');
+  const execAsync = promisify(exec);
+  
+  try {
+    await execAsync(`git clone "${url}" "${dest}"`);
+    process.stdout.write(green(`successfully cloned ${repoName}\n`));
+    process.stdout.write(dim('run `shadow skills sync` to share it with agy\n'));
+    return 0;
+  } catch (err) {
+    process.stderr.write(red(`failed to clone: ${(err as Error).message}\n`));
+    return 1;
+  }
 }

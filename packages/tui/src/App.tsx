@@ -65,6 +65,8 @@ const SLASH_COMMANDS: Array<[string, string]> = [
   ['/agents', 'list agents and their providers'],
   ['/provider', 'switch lead provider (claude | agy)'],
   ['/model', 'pick a model and reasoning effort'],
+  ['/skill', 'manage shadow skills (sync | new <name> | lint)'],
+  ['/mcp', 'manage MCP servers for the current provider'],
   ['/plan', 'toggle plan mode — design without executing'],
   ['/usage', 'quota & cost overlay (esc to close)'],
   ['/clear', 'clear the transcript'],
@@ -294,6 +296,41 @@ export function App({
           return;
         }
         applyModel(match);
+        return;
+      }
+      case 'skill': {
+        if (args.length === 0) {
+          setState((s) => say(s, 'usage: /skill [sync|new <name>|lint]', 'error'));
+          return;
+        }
+        setState((s) => ({ ...s, busy: true }));
+        import('node:child_process').then(({ exec }) => {
+          const cmd = `"${process.execPath}" "${process.argv[1]}" skills ${args.join(' ')}`;
+          exec(cmd, { cwd }, (error, stdout, stderr) => {
+            const out = [stdout, stderr].filter(Boolean).join('\n').trim();
+            setState((s) => {
+              const s1 = say(s, out || (error ? error.message : 'done'));
+              return { ...s1, busy: false };
+            });
+          });
+        });
+        return;
+      }
+      case 'mcp': {
+        if (args.length === 0) {
+          setState((s) => say(s, `usage: /mcp [add|remove|list] (runs ${provider} mcp)`, 'error'));
+          return;
+        }
+        setState((s) => ({ ...s, busy: true }));
+        import('node:child_process').then(({ exec }) => {
+          exec(`${provider} mcp ${args.join(' ')}`, { cwd }, (error, stdout, stderr) => {
+            const out = [stdout, stderr].filter(Boolean).join('\n').trim();
+            setState((s) => {
+              const s1 = say(s, out || (error ? error.message : 'done'));
+              return { ...s1, busy: false };
+            });
+          });
+        });
         return;
       }
       case 'effort': {

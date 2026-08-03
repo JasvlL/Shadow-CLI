@@ -91,7 +91,11 @@ export class AgyProvider implements Provider {
     ];
     if (sessionRef) args.push('--conversation', sessionRef);
     if (req.plan) args.push('--mode', 'plan');
-    if (req.effort) args.push('--effort', req.effort);
+    if (req.effort) {
+      args.push('--effort', req.effort);
+    } else {
+      args.push('--effort', 'medium');
+    }
     for (const dir of req.addDirs ?? []) args.push('--add-dir', dir);
     // Prompting is always off, without exception. A spawned agy has no terminal, so
     // 'request-review' mode waits for a confirmation that can never arrive and then

@@ -1,5 +1,3 @@
-"use client";
-
 export default function Home() {
   return (
     <div className="flex flex-col min-h-screen bg-[#050505] text-white selection:bg-[#f0f] selection:text-white">
@@ -47,18 +45,9 @@ export default function Home() {
           >
             Get PRO - $9.99/mo
           </a>
-          <div className="flex items-center w-full sm:w-auto gap-3 px-6 py-4 text-sm font-mono text-zinc-300 border border-zinc-800 rounded-full bg-zinc-900/50 backdrop-blur-sm cursor-copy hover:border-zinc-700 transition" onClick={(e) => {
-            navigator.clipboard.writeText("npm i -g shadow-cli");
-            const el = e.currentTarget.querySelector("span");
-            if(el) {
-              const orig = el.innerText;
-              el.innerText = "Copied!";
-              setTimeout(() => el.innerText = orig, 2000);
-            }
-          }}>
+          <div className="flex items-center w-full sm:w-auto gap-3 px-6 py-4 text-sm font-mono text-zinc-300 border border-zinc-800 rounded-full bg-zinc-900/50 backdrop-blur-sm hover:border-zinc-700 transition">
             <span className="text-zinc-500">$</span> 
             <span>npm i -g shadow-cli</span>
-            <svg className="w-4 h-4 ml-2 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
           </div>
         </div>
 

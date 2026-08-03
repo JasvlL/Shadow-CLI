@@ -1,8 +1,9 @@
 name = "shadow-api"
 main = "src/index.ts"
 compatibility_date = "2024-10-22"
+compatibility_flags = [ "nodejs_compat" ]
 
 [[d1_databases]]
 binding = "DB"
 database_name = "shadow_licenses"
-database_id = "00000000-0000-0000-0000-000000000000" # Se actualizará cuando el usuario cree la BD en Cloudflare
+database_id = "bff23e1a-eb65-4156-b7fc-e42e5d053a49"

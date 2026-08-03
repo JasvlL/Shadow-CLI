@@ -59,10 +59,13 @@ const TIER_ORDER: Record<ModelChoice['tier'], number> = { deep: 0, balanced: 1, 
  * being signed out of one plan must not stop you choosing a model on the other.
  */
 export async function listModels(): Promise<ModelChoice[]> {
-  const [agy, claude] = await Promise.all([
+  let [agy, claude] = await Promise.all([
     new AgyProvider().models().catch(() => [] as string[]),
     new ClaudeProvider().models().catch(() => [] as string[]),
   ]);
+
+  // Unify Agy models: remove effort suffixes to prevent duplicates, as effort is now controlled separately
+  agy = Array.from(new Set(agy.map(id => id.replace(/-(low|medium|high|xhigh|max)$/i, ''))));
 
   const choices = [
     ...claude.map((id) => describe(id, 'claude')),

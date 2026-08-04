@@ -31,6 +31,11 @@ export type SignIn =
 
 export interface AccountStatus {
   signedIn: boolean;
+  /**
+   * State only — never the command that fixes it. What to do about being signed out
+   * differs per surface (a picker already has a footer, `shadow auth` prints a `fix:`
+   * line), so that belongs to the caller, not here.
+   */
   detail: string;
   /** Tier, customer name — anything worth showing next to the status. */
   extra?: string;
@@ -96,7 +101,7 @@ export const ACCOUNTS: Account[] = [
       const license = loadLicense();
       return {
         signedIn: license.active,
-        detail: license.active ? 'PRO' : 'free — /login shadow <key>',
+        detail: license.active ? 'PRO' : 'free',
         extra: license.customerName,
       };
     },
@@ -113,12 +118,7 @@ export const ACCOUNTS: Account[] = [
     async status() {
       return cached('claude', async () => {
         const signedIn = isClaudeSignedIn();
-        return {
-          status: {
-            signedIn,
-            detail: signedIn ? 'signed in' : 'not signed in — /login claude',
-          },
-        };
+        return { status: { signedIn, detail: signedIn ? 'signed in' : 'not signed in' } };
       });
     },
   },
@@ -138,9 +138,7 @@ export const ACCOUNTS: Account[] = [
         return {
           status: {
             signedIn,
-            detail: signedIn
-              ? `signed in, ${models.length} models`
-              : 'not signed in — /login antigravity',
+            detail: signedIn ? `signed in, ${models.length} models` : 'not signed in',
           },
           models,
         };

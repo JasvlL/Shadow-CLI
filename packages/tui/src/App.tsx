@@ -23,6 +23,7 @@ import {
   invalidateAuth,
   ACCOUNTS,
   type AccountId,
+  type AccountStatus,
   compactTranscript,
   readTranscript,
   renderTranscriptMarkdown,
@@ -33,6 +34,7 @@ import {
 import { discoverSkillRoots, loadSkills } from '@shadow/skills';
 import { renderBanner } from '@shadow/render';
 import { ModelPicker } from './ModelPicker.js';
+import { AccountPicker } from './AccountPicker.js';
 import { startApprovalServer, type ApprovalServer } from './approval-server.js';
 import {
   dim,
@@ -121,6 +123,8 @@ export function App({
   const [extraDirs, setExtraDirs] = useState<string[]>([]);
   /** Set while another CLI owns the terminal for an interactive login. */
   const [suspended, setSuspended] = useState<AccountId | null>(null);
+  const [pickingAccount, setPickingAccount] = useState(false);
+  const [statuses, setStatuses] = useState<Map<AccountId, AccountStatus>>();
 
   /**
    * Apply a model choice. Selecting one on the other plan is a provider switch, and
@@ -250,11 +254,14 @@ export function App({
       // A plan you are not signed in to contributes no models, and without this they are
       // simply absent from `/model` with no explanation. Runs behind the prompt because
       // the agy half spawns a subprocess.
-      void accountStatuses().then((statuses) => {
+      void accountStatuses().then((resolved) => {
         if (cancelled) return;
+        // Also seeds the account picker, so opening `/login` is instant rather than
+        // waiting on agy's subprocess again.
+        setStatuses(resolved);
         for (const { id, grant } of ACCOUNTS) {
           if (grant.kind !== 'models') continue;
-          if (statuses.get(id)?.signedIn) continue;
+          if (resolved.get(id)?.signedIn) continue;
           const plan = grant.provider;
           setState((s) => say(s, `${plan} models hidden — /login ${id}`));
         }
@@ -321,6 +328,7 @@ export function App({
         const status = await account.status();
         if (cancelled) return;
         setState((s) => say(s, `${account.label}: ${status.detail}`));
+        setStatuses((prev) => new Map(prev).set(account.id, status));
 
         // Signing in changes what the catalogue can offer, so refresh it rather than
         // making the user restart to see their models.
@@ -347,6 +355,46 @@ export function App({
     if (!pending) return;
     setState((s) => ({ ...s, approval: null }));
     pending.resolve(approved);
+  };
+
+  /**
+   * Start signing in to one account, from either the picker or `/login <account>`.
+   *
+   * shadow's own is the only account it can grant; the others live in another CLI, so
+   * those hand the terminal over instead — see the suspend effect.
+   */
+  const beginLogin = (id: AccountId, key?: string) => {
+    const account = getAccount(id);
+    if (!account) return;
+
+    if (account.signIn.kind !== 'license') {
+      setSuspended(account.id);
+      return;
+    }
+
+    if (!key) {
+      setState((s) =>
+        say(s, 'a shadow licence is a key: /login shadow <key>', 'error'),
+      );
+      return;
+    }
+
+    setState((s) => ({ ...s, busy: true }));
+    void validateLicenseKey(key).then((result) => {
+      invalidateAuth('shadow');
+      licenseRef.current = result.tier;
+      void accountStatuses().then(setStatuses);
+      setState((s) => {
+        const s1 = say(
+          s,
+          result.active
+            ? 'Shadow PRO unlocked — delegation and the quota tracker are on.'
+            : 'invalid license key.',
+          result.active ? undefined : 'error',
+        );
+        return { ...s1, busy: false, license: result.tier };
+      });
+    });
   };
 
   const handleSlash = (command: string) => {
@@ -478,17 +526,14 @@ export function App({
         return;
       case 'login': {
         const target = args[0];
-        // Bare `/login` reports all three. Invalidate first so this is a real check
-        // rather than a replay — a sign-in from another terminal shows up here.
+        // Bare `/login` opens the picker; `/login <account>` goes straight there, so the
+        // fast path stays available — same shape as `/model`.
         if (!target) {
-          setState((s) => ({ ...s, busy: true }));
+          setPickingAccount(true);
+          // Refresh behind the open picker: it renders whatever is already known, and a
+          // sign-in from another terminal shows up as soon as the check lands.
           invalidateAuth();
-          void accountStatuses().then((statuses) => {
-            const lines = ACCOUNTS.map(
-              (a) => `  ${a.label.padEnd(12)} ${statuses.get(a.id)?.detail ?? '?'}`,
-            ).join('\n');
-            setState((s) => ({ ...say(s, lines), busy: false }));
-          });
+          void accountStatuses().then(setStatuses);
           return;
         }
 
@@ -498,34 +543,7 @@ export function App({
           setState((s) => say(s, `usage: /login <${names}>`, 'error'));
           return;
         }
-
-        // shadow's own account is the only one it can grant: everything else lives in
-        // another CLI, so those hand the terminal over instead (see the suspend effect).
-        if (account.signIn.kind === 'license') {
-          const key = args[1];
-          if (!key) {
-            setState((s) => say(s, 'usage: /login shadow <key>', 'error'));
-            return;
-          }
-          setState((s) => ({ ...s, busy: true }));
-          void validateLicenseKey(key).then((result) => {
-            invalidateAuth('shadow');
-            licenseRef.current = result.tier;
-            setState((s) => {
-              const s1 = say(
-                s,
-                result.active
-                  ? 'Shadow PRO unlocked — delegation and the quota tracker are on.'
-                  : 'invalid license key.',
-                result.active ? undefined : 'error',
-              );
-              return { ...s1, busy: false, license: result.tier };
-            });
-          });
-          return;
-        }
-
-        setSuspended(account.id);
+        beginLogin(account.id, args[1]);
         return;
       }
       case 'logout': {
@@ -824,6 +842,16 @@ export function App({
             setState((s) => ({ ...s, effort }));
           }}
           onCancel={() => setPickingModel(false)}
+        />
+      ) : pickingAccount ? (
+        <AccountPicker
+          accounts={ACCOUNTS}
+          statuses={statuses}
+          onSelect={(id) => {
+            setPickingAccount(false);
+            beginLogin(id);
+          }}
+          onCancel={() => setPickingAccount(false)}
         />
       ) : pickingEffort ? (
         <EffortPicker

@@ -71,7 +71,7 @@ export async function listModels(): Promise<ModelChoice[]> {
   for (const id of agy) {
     const match = id.match(/-(low|medium|high|xhigh|max)$/i);
     const baseId = match ? id.slice(0, match.index) : id;
-    const effort = match ? match[1].toLowerCase() : 'medium';
+    const effort = match ? match[1]?.toLowerCase() ?? 'medium' : 'medium';
     if (['low', 'medium', 'high'].includes(effort)) {
       if (!agyEfforts.has(baseId)) agyEfforts.set(baseId, []);
       if (!agyEfforts.get(baseId)!.includes(effort as any)) {
@@ -84,7 +84,10 @@ export async function listModels(): Promise<ModelChoice[]> {
     ...claude.map((id) => describe(id, 'claude')),
     ...Array.from(agyEfforts.keys()).map((id) => {
       const choice = describe(id, 'agy');
-      choice.efforts = agyEfforts.get(id);
+      const efforts = agyEfforts.get(id);
+      if (efforts) {
+        choice.efforts = efforts;
+      }
       return choice;
     }),
   ];

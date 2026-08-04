@@ -1,3 +1,5 @@
+import { SITE } from './site';
+
 /**
  * Paddle checkout link, set in the Vercel dashboard once the product exists.
  *
@@ -172,8 +174,18 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="py-8 text-center text-zinc-600 text-sm border-t border-zinc-900 z-10">
-        <p>© 2026 Shadow CLI. All rights reserved.</p>
+      <footer className="py-10 text-center text-zinc-600 text-sm border-t border-zinc-900 z-10">
+        <div className="flex flex-wrap justify-center gap-6 mb-4">
+          <a href="/legal/terms" className="hover:text-zinc-300 transition">Terms</a>
+          <a href="/legal/privacy" className="hover:text-zinc-300 transition">Privacy</a>
+          <a href="/legal/refunds" className="hover:text-zinc-300 transition">Refunds</a>
+          <a href="/sessions" className="hover:text-zinc-300 transition">Session viewer</a>
+          <a href={`mailto:${SITE.supportEmail}`} className="hover:text-zinc-300 transition">Contact</a>
+        </div>
+        <p className="mb-1">
+          Payments handled by Paddle, our merchant of record.
+        </p>
+        <p>© 2026 {SITE.legalName}. All rights reserved.</p>
       </footer>
     </div>
   );

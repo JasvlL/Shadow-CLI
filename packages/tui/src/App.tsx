@@ -3,7 +3,7 @@ import { Box, Static, Text, useApp, useInput } from 'ink';
 import Spinner from 'ink-spinner';
 import TextInput from 'ink-text-input';
 import type { ShadowEvent, ProviderId } from '@shadow/providers';
-import { describeReset, fallbackProvider } from '@shadow/providers';
+import { describeReset, fallbackProvider, isClaudeSignedIn } from '@shadow/providers';
 import {
   Orchestrator,
   SessionLog,
@@ -18,6 +18,11 @@ import {
   loadLicense,
   validateLicenseKey,
   clearLicense,
+  accountStatuses,
+  getAccount,
+  invalidateAuth,
+  ACCOUNTS,
+  type AccountId,
   compactTranscript,
   readTranscript,
   renderTranscriptMarkdown,
@@ -38,6 +43,7 @@ import {
 } from '@shadow/render';
 import { LiveTurn, TranscriptItem } from './Transcript.js';
 import { Prompt } from './Prompt.js';
+import { runInteractive } from './suspend.js';
 import { appendHistory, loadHistory } from './history.js';
 import { expandMentions } from './mentions.js';
 import { UsageOverlay } from './Usage.js';
@@ -79,8 +85,8 @@ const SLASH_COMMANDS: Array<[string, string]> = [
   ['/plan', 'toggle plan mode — design without executing'],
   ['/usage', 'quota & cost overlay (esc to close)'],
   ['/cost', 'quota & spend so far this session'],
-  ['/login', 'unlock shadow PRO with a license key'],
-  ['/logout', 'clear the stored license and return to free'],
+  ['/login', 'sign in: shadow <key> | claude | antigravity'],
+  ['/logout', 'sign out of an account'],
   ['/compact', 'summarize the transcript to free up context'],
   ['/config', 'show the current permission config'],
   ['/memory', 'show resolved project rule files'],
@@ -113,6 +119,8 @@ export function App({
   const [pickingEffort, setPickingEffort] = useState(false);
   const [showUsage, setShowUsage] = useState(false);
   const [extraDirs, setExtraDirs] = useState<string[]>([]);
+  /** Set while another CLI owns the terminal for an interactive login. */
+  const [suspended, setSuspended] = useState<AccountId | null>(null);
 
   /**
    * Apply a model choice. Selecting one on the other plan is a provider switch, and
@@ -131,6 +139,10 @@ export function App({
   };
 
   const orchestratorRef = useRef<Orchestrator | null>(null);
+  // The orchestrator is built once, so it has to read the tier through a ref: a value
+  // captured in that closure would pin whatever the licence was at startup, and
+  // `/login shadow <key>` would appear to do nothing until the next run.
+  const licenseRef = useRef<'free' | 'pro'>('free');
   const gateRef = useRef<((tool: string, input: unknown) => Promise<boolean>) | null>(null);
   const approvalRef = useRef<ApprovalServer | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -158,6 +170,7 @@ export function App({
       const licenseInfo = loadLicense();
       
       if (cancelled) return;
+      licenseRef.current = licenseInfo.tier;
       setState((s) => ({ ...s, license: licenseInfo.tier }));
 
       const gate = createGate({
@@ -189,6 +202,7 @@ export function App({
         cwd,
         approve: gate,
         approvalEndpoint: approvals ?? undefined,
+        isPro: () => licenseRef.current === 'pro',
         onEvent: (ev) => {
           if (ev.t === 'delegation_start') setState((s) => delegationStarted(s, ev.record));
           if (ev.t === 'delegation_end') setState((s) => delegationEnded(s, ev.record));
@@ -200,22 +214,24 @@ export function App({
       orchestratorRef.current = orchestrator;
       setHistory(await loadHistory());
 
-      // Only local, cheap facts go in the banner. Verifying a plan is reachable means a
-      // round trip per provider — Claude's health check runs a whole query — and making
-      // the banner wait on that would stall startup for seconds. `flick auth` is where
-      // you check credentials; this is where you see your setup.
+      // Only cheap facts go in the banner. `isClaudeSignedIn()` is a file stat, so
+      // Claude's state here is real and free. agy's costs a ~2s subprocess, so it stays
+      // optimistic and is corrected by the background notice below — same reasoning that
+      // keeps `health()` out of the banner: nothing that stalls startup belongs here.
       const skills = await discoverSkillRoots(cwd)
         .then(loadSkills)
         .catch(() => []);
       if (cancelled) return;
+
+      const claudeReady = isClaudeSignedIn();
 
       const banner = renderBanner(
         {
           cwd,
           provider: initialProvider,
           model: model ?? DEFAULT_MODEL[initialProvider],
-          ready: ['claude', 'agy'],
-          unavailable: [],
+          ready: claudeReady ? ['claude', 'agy'] : ['agy'],
+          unavailable: claudeReady ? [] : ['claude'],
           agents: orchestrator.listAgents().length,
           skills: skills.length,
           version: VERSION,
@@ -230,6 +246,19 @@ export function App({
         s.committed.length === 0 ? { ...s, committed: [{ kind: 'banner', text: banner }] } : s,
       );
       setReady(true);
+
+      // A plan you are not signed in to contributes no models, and without this they are
+      // simply absent from `/model` with no explanation. Runs behind the prompt because
+      // the agy half spawns a subprocess.
+      void accountStatuses().then((statuses) => {
+        if (cancelled) return;
+        for (const { id, grant } of ACCOUNTS) {
+          if (grant.kind !== 'models') continue;
+          if (statuses.get(id)?.signedIn) continue;
+          const plan = grant.provider;
+          setState((s) => say(s, `${plan} models hidden — /login ${id}`));
+        }
+      });
 
       // The catalogue is only needed when the picker opens, so it loads behind the
       // prompt rather than in front of it.
@@ -247,12 +276,71 @@ export function App({
     };
   }, [cwd, requestApproval, session, initialProvider, model, resume]);
 
-  useInput((_char, key) => {
-    if (key.escape && state.busy) {
-      abortRef.current?.abort();
-      setState((s) => ({ ...s, busy: false, status: 'interrupted' }));
+  useInput(
+    (_char, key) => {
+      if (key.escape && state.busy) {
+        abortRef.current?.abort();
+        setState((s) => ({ ...s, busy: false, status: 'interrupted' }));
+      }
+    },
+    // Every useInput must go quiet while the child owns the terminal. Ink refcounts raw
+    // mode and only restores cooked mode once the last hook releases it, so a single
+    // active handler here would keep the child from reading input at all.
+    { isActive: !suspended },
+  );
+
+  /**
+   * Hand the terminal to another CLI, then take it back.
+   *
+   * Deliberately an effect rather than part of the `/login` handler: `setSuspended` is
+   * async, and spawning in the same tick would start the child before React had committed
+   * and before Ink's `useInput` cleanups had released raw mode.
+   */
+  useEffect(() => {
+    if (!suspended) return;
+    // `/login` only suspends for spawn-backed accounts; anything else is a bug upstream.
+    const account = getAccount(suspended);
+    if (!account || account.signIn.kind === 'license') {
+      setSuspended(null);
+      return;
     }
-  });
+
+    let cancelled = false;
+    const { bin, args: binArgs, hint } = account.signIn;
+    void (async () => {
+      try {
+        const result = await runInteractive(bin, binArgs ?? []);
+        if (cancelled) return;
+
+        if (result.error) {
+          setState((s) => say(s, `could not launch \`${bin}\` — ${hint}`, 'error'));
+          return;
+        }
+
+        invalidateAuth(account.id);
+        const status = await account.status();
+        if (cancelled) return;
+        setState((s) => say(s, `${account.label}: ${status.detail}`));
+
+        // Signing in changes what the catalogue can offer, so refresh it rather than
+        // making the user restart to see their models.
+        if (status.signedIn) {
+          void listModels()
+            .then((choices) => {
+              if (!cancelled) setModels(choices);
+            })
+            .catch(() => {});
+        }
+      } finally {
+        // Unconditional: a failed spawn must never leave the UI with input disabled.
+        if (!cancelled) setSuspended(null);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [suspended]);
 
   const answerApproval = (approved: boolean) => {
     const pending = state.approval;
@@ -389,26 +477,82 @@ export function App({
         }));
         return;
       case 'login': {
-        if (!args[0]) {
-          setState((s) => say(s, 'usage: /login <key>', 'error'));
+        const target = args[0];
+        // Bare `/login` reports all three. Invalidate first so this is a real check
+        // rather than a replay — a sign-in from another terminal shows up here.
+        if (!target) {
+          setState((s) => ({ ...s, busy: true }));
+          invalidateAuth();
+          void accountStatuses().then((statuses) => {
+            const lines = ACCOUNTS.map(
+              (a) => `  ${a.label.padEnd(12)} ${statuses.get(a.id)?.detail ?? '?'}`,
+            ).join('\n');
+            setState((s) => ({ ...say(s, lines), busy: false }));
+          });
           return;
         }
-        setState((s) => ({ ...s, busy: true }));
-        void validateLicenseKey(args[0]).then((result) => {
-          setState((s) => {
-            const s1 = say(
-              s,
-              result.active ? 'success! Shadow PRO unlocked.' : 'invalid license key.',
-              result.active ? undefined : 'error',
-            );
-            return { ...s1, busy: false, license: result.tier };
+
+        const account = getAccount(target as AccountId);
+        if (!account) {
+          const names = ACCOUNTS.map((a) => a.id).join(' | ');
+          setState((s) => say(s, `usage: /login <${names}>`, 'error'));
+          return;
+        }
+
+        // shadow's own account is the only one it can grant: everything else lives in
+        // another CLI, so those hand the terminal over instead (see the suspend effect).
+        if (account.signIn.kind === 'license') {
+          const key = args[1];
+          if (!key) {
+            setState((s) => say(s, 'usage: /login shadow <key>', 'error'));
+            return;
+          }
+          setState((s) => ({ ...s, busy: true }));
+          void validateLicenseKey(key).then((result) => {
+            invalidateAuth('shadow');
+            licenseRef.current = result.tier;
+            setState((s) => {
+              const s1 = say(
+                s,
+                result.active
+                  ? 'Shadow PRO unlocked — delegation and the quota tracker are on.'
+                  : 'invalid license key.',
+                result.active ? undefined : 'error',
+              );
+              return { ...s1, busy: false, license: result.tier };
+            });
           });
-        });
+          return;
+        }
+
+        setSuspended(account.id);
         return;
       }
       case 'logout': {
-        clearLicense();
-        setState((s) => ({ ...say(s, 'logged out — back to Shadow Free.'), license: 'free' }));
+        const target = args[0];
+        if (!target) {
+          const names = ACCOUNTS.map((a) => a.id).join(' | ');
+          setState((s) => say(s, `usage: /logout <${names}>`, 'error'));
+          return;
+        }
+        const account = getAccount(target as AccountId);
+        if (!account) {
+          setState((s) => say(s, `unknown account "${target}"`, 'error'));
+          return;
+        }
+        if (account.signIn.kind === 'license') {
+          clearLicense();
+          invalidateAuth('shadow');
+          licenseRef.current = 'free';
+          setState((s) => ({ ...say(s, 'logged out — back to Shadow Free.'), license: 'free' }));
+          return;
+        }
+        // Not shadow's credentials to drop — say where they actually live.
+        const { bin } = account.signIn;
+        invalidateAuth(account.id);
+        setState((s) =>
+          say(s, `shadow does not hold ${account.label} credentials — sign out with \`${bin}\` itself.`),
+        );
         return;
       }
       case 'compact': {
@@ -620,6 +764,20 @@ export function App({
     return <UsageOverlay usage={state.usage} license={state.license} onClose={() => setShowUsage(false)} />;
   }
 
+  // While another CLI owns the terminal, render only the committed scrollback. Those
+  // lines were written to stdout once and are never repainted, so the child cannot
+  // corrupt them; dropping the live region below means Ink erases its frame and stays
+  // silent, and the child's output lands cleanly underneath. This also guarantees the
+  // pickers and the approval prompt are unmounted, so no useInput is left holding raw
+  // mode. On resume a fresh live region is painted below the child's output.
+  if (suspended) {
+    return (
+      <Static items={state.committed}>
+        {(item, i) => <TranscriptItem key={i} item={item} />}
+      </Static>
+    );
+  }
+
   return (
     <Box flexDirection="column">
       {/* Committed items are written once and never repainted. The header is the
@@ -709,7 +867,7 @@ export function App({
             placeholder={ready ? 'ask anything · @file · /help' : 'loading agents…'}
             commands={SLASH_COMMANDS}
             cwd={cwd}
-            disabled={state.busy}
+            disabled={state.busy || !!suspended}
             history={history}
           />
         </Box>

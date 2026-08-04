@@ -11,6 +11,7 @@ import { query } from '@anthropic-ai/claude-agent-sdk';
 import type { Options, SDKMessage } from '@anthropic-ai/claude-agent-sdk';
 import type { ShadowEvent, HealthResult, Provider, RunRequest } from './types.js';
 import { quotaFromClaudeError, quotaFromRateLimitInfo } from './quota.js';
+import { isClaudeSignedIn } from './signed-in.js';
 
 export interface ClaudeProviderOptions {
   defaultModel?: string;
@@ -38,11 +39,19 @@ export class ClaudeProvider implements Provider {
   }
 
   async models(): Promise<string[]> {
+    // Signed out, this plan reaches nothing — say so rather than advertising models the
+    // user cannot run. Mirrors AgyProvider.models(), which returns [] when `agy models`
+    // fails, so the catalogue treats both plans the same way.
+    if (!isClaudeSignedIn()) return [];
     // The SDK does not expose a model listing endpoint; these are the ids it accepts.
     return ['claude-opus-4-5', 'claude-sonnet-4-5', 'claude-haiku-4-5', 'opus', 'sonnet', 'haiku'];
   }
 
   async health(): Promise<HealthResult> {
+    // Short-circuit before spending a whole query on a question the filesystem answers.
+    if (!isClaudeSignedIn()) {
+      return { ok: false, detail: 'not signed in — run `claude` once, or set ANTHROPIC_API_KEY' };
+    }
     try {
       let sawInit = false;
       for await (const ev of this.run({ prompt: 'ok', cwd: process.cwd() })) {

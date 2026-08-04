@@ -15,6 +15,7 @@ import type { ShadowEvent, Provider, ProviderId, RunRequest } from '@shadow/prov
 import type { AgentDef } from './agents.js';
 import { loadAgents } from './agents.js';
 import { loadRules } from './rules.js';
+import { isPro as licenseIsPro } from './auth.js';
 
 export interface DelegationRecord {
   id: string;
@@ -47,6 +48,12 @@ export interface OrchestratorOptions {
   approve?: (tool: string, input: unknown) => Promise<boolean>;
   /** Passed through to agy subagents so their PreToolUse hook can ask this session. */
   approvalEndpoint?: { port: number; token: string };
+  /**
+   * Whether PRO features are unlocked. A getter rather than a boolean because the
+   * orchestrator is built once per session: a snapshot would freeze the answer, and
+   * `/login shadow <key>` mid-session would appear to do nothing until restart.
+   */
+  isPro?: () => boolean;
   onEvent?: (event: OrchestratorEvent) => void;
 }
 
@@ -136,6 +143,11 @@ export class Orchestrator {
     return this.providers[id];
   }
 
+  /** Single source of truth for the PRO gate, shared with `lead.ts`. */
+  isPro(): boolean {
+    return this.opts.isPro?.() ?? licenseIsPro();
+  }
+
   /**
    * Run one subagent to completion and return only its final text.
    *
@@ -149,6 +161,17 @@ export class Orchestrator {
     model?: string;
     signal?: AbortSignal;
   }): Promise<string> {
+    // The PRO gate. Checked before anything else so no DelegationRecord is created and
+    // no semaphore slot is taken — otherwise the UI would show a subagent starting and
+    // immediately dying. Reported in-band, like every other refusal here, so the lead
+    // can adapt within its turn instead of having the turn aborted.
+    if (!this.isPro()) {
+      return (
+        `error: multi-agent delegation is a shadow PRO feature. Do this task yourself ` +
+        `instead. The user can unlock it with \`/login shadow <key>\`.`
+      );
+    }
+
     const def = this.agents.get(params.agent);
     if (!def && !params.provider && !params.model) {
       const known = [...this.agents.keys()].join(', ') || '(none defined)';

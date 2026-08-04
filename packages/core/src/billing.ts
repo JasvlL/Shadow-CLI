@@ -3,6 +3,14 @@ import path from 'node:path';
 import os from 'node:os';
 import crypto from 'node:crypto';
 
+/**
+ * Where the licence is verified when SHADOW_API_URL is not set.
+ *
+ * This has to be a real deployed URL: a client machine has no local worker, so a
+ * localhost default silently downgrades every paying customer to free.
+ */
+const PRODUCTION_API_URL = 'https://shadow-api.jasvll.workers.dev';
+
 const SHADOW_DIR = path.join(os.homedir(), '.shadow');
 const LICENSE_FILE = path.join(SHADOW_DIR, 'license.json');
 // Simple machine-bound key for obfuscation (prevents casual copy-pasting of license files between PCs)
@@ -75,11 +83,13 @@ export function clearLicense(): LicenseStatus {
  */
 export async function validateLicenseKey(key: string): Promise<LicenseStatus> {
   try {
-    // En producción esto apuntará a tu dominio real (ej. api.shadow.dev)
-    const API_URL = process.env.SHADOW_API_URL || 'http://127.0.0.1:8787';
-    
-    // Si estamos offline o probando, podemos mantener el fallback
-    if (key === 'TEST-PRO-KEY') {
+    const API_URL = process.env.SHADOW_API_URL || PRODUCTION_API_URL;
+
+    // Development-only shortcut, so working on the TUI does not need a live licence.
+    // Gated behind SHADOW_DEV because this repo is public: without the gate, the bypass
+    // is simply a free PRO key that anyone can read off GitHub. The server no longer
+    // honours it at all — this branch never leaves the machine.
+    if (key === 'TEST-PRO-KEY' && process.env.SHADOW_DEV === '1') {
       const status: LicenseStatus = {
         key,
         active: true,
@@ -115,7 +125,8 @@ export async function validateLicenseKey(key: string): Promise<LicenseStatus> {
       return status;
     }
   } catch (err) {
-    // Error de red o servidor, devolvemos fallo por seguridad
+    // Network or server error: fail closed. Treating an unreachable server as "valid"
+    // would make the licence check trivially defeatable by going offline.
   }
 
   return { key, active: false, tier: 'free' };

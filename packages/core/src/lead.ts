@@ -57,9 +57,16 @@ export interface LeadOptions {
 }
 
 const LEAD_SYSTEM_PROMPT = `You are the lead agent in shadow, a multi-provider terminal IDE.
-Always respond in the same language the user uses to speak to you.
+Always respond in the same language the user uses to speak to you.`;
 
-Delegation works through one tool: mcp__shadow__delegate. It is the only way to reach a
+/**
+ * Appended only for PRO sessions.
+ *
+ * Held separately because a free user has no delegate tool at all: instructing them to
+ * delegate would produce a call that the orchestrator refuses, wasting a turn to
+ * discover something we already knew.
+ */
+const DELEGATION_PROMPT = `Delegation works through one tool: mcp__shadow__delegate. It is the only way to reach a
 subagent here. Subagents may run on a different model provider than you (Anthropic or
 Google); each starts with an empty context and returns only its final answer.
 
@@ -88,6 +95,14 @@ const LEAD_DISALLOWED_TOOLS = ['Task', 'Agent'];
 /** Append project rules below shadow's own instructions, clearly fenced. */
 function withExtra(base: string, extra?: string): string {
   return extra ? `${base}\n\n${extra}` : base;
+}
+
+/** The lead's system prompt, carrying delegation instructions only when they apply. */
+function leadPrompt(opts: LeadOptions): string {
+  const base = opts.orchestrator.isPro()
+    ? `${LEAD_SYSTEM_PROMPT}\n\n${DELEGATION_PROMPT}`
+    : LEAD_SYSTEM_PROMPT;
+  return withExtra(base, opts.systemPromptExtra);
 }
 
 /**
@@ -186,16 +201,17 @@ async function refreshSummary(
 function runClaudeLead(prompt: string, opts: LeadOptions): AsyncIterable<ShadowEvent> {
   const claude = new ClaudeProvider({
     stream: opts.stream,
-    extraOptions: {
-      mcpServers: { shadow: buildDelegateServer(opts.orchestrator) },
-    },
+    // Free sessions get no delegate tool at all, rather than one that always refuses.
+    extraOptions: opts.orchestrator.isPro()
+      ? { mcpServers: { shadow: buildDelegateServer(opts.orchestrator) } }
+      : {},
   });
 
   const req = {
     prompt,
     cwd: opts.cwd,
     model: opts.model,
-    systemPrompt: withExtra(LEAD_SYSTEM_PROMPT, opts.systemPromptExtra),
+    systemPrompt: leadPrompt(opts),
     disallowedTools: LEAD_DISALLOWED_TOOLS,
     addDirs: opts.addDirs,
     skills: opts.skills ?? 'all',
@@ -228,7 +244,7 @@ function runAgyLead(prompt: string, opts: LeadOptions): AsyncIterable<ShadowEven
     cwd: opts.cwd,
     model: opts.model,
     effort: opts.effort,
-    systemPrompt: withExtra(LEAD_SYSTEM_PROMPT, opts.systemPromptExtra),
+    systemPrompt: leadPrompt(opts),
     addDirs: [opts.cwd, ...(opts.addDirs ?? [])],
     // AgyProvider always disables agy's own prompting — a spawned process cannot ask.
     // Permissions for this lead are enforced by the PreToolUse hook instead.

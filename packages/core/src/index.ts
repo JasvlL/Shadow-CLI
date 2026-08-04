@@ -8,6 +8,7 @@ export * from './transcript.js';
 export * from './summary.js';
 export * from './usage-tracker.js';
 export * from './billing.js';
+export * from './auth.js';
 export * from './quota-reader.js';
 export * from './handoff.js';
 export * from './models.js';

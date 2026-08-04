@@ -250,7 +250,39 @@ async function main(argv: string[]): Promise<number> {
     }
 
     case 'auth': {
-      const { validateLicenseKey, loadLicense } = await import('@shadow/core');
+      const { validateLicenseKey, accountStatuses, getAccount, invalidateAuth, ACCOUNTS } =
+        await import('@shadow/core');
+
+      // `shadow auth login <account>` hands the terminal to whoever owns those
+      // credentials — shadow issues none of its own except the licence.
+      if (rest[0] === 'login') {
+        const account = rest[1] ? getAccount(rest[1] as never) : undefined;
+        if (!account) {
+          const names = ACCOUNTS.map((a) => a.id).join(' | ');
+          process.stdout.write(`usage: shadow auth login <${names}>\n`);
+          return 1;
+        }
+        if (account.signIn.kind === 'license') {
+          process.stdout.write('shadow is unlocked with a key: shadow auth <key>\n');
+          return 1;
+        }
+        const { spawnSync } = await import('node:child_process');
+        const result = spawnSync(account.signIn.bin, account.signIn.args ?? [], {
+          stdio: 'inherit',
+          shell: process.platform === 'win32',
+        });
+        if (result.error) {
+          process.stdout.write(
+            `could not launch '${account.signIn.bin}' — ${account.signIn.hint}\n`,
+          );
+          return 1;
+        }
+        invalidateAuth(account.id);
+        const status = await account.status();
+        process.stdout.write(`${account.label}: ${status.detail}\n`);
+        return status.signedIn ? 0 : 1;
+      }
+
       if (rest[0]) {
         process.stdout.write(`Validating license key: ${rest[0]}...\n`);
         const result = await validateLicenseKey(rest[0]);
@@ -261,32 +293,20 @@ async function main(argv: string[]): Promise<number> {
         }
         return result.active ? 0 : 1;
       }
-      
-      const license = loadLicense();
-      process.stdout.write(`Shadow Tier: ${license.tier === 'pro' ? '\x1b[32mPRO\x1b[0m' : 'Free'}\n`);
-      if (license.tier === 'pro') {
-        process.stdout.write(`License Key: ${license.key}\n`);
-      }
-      process.stdout.write(`---\n`);
 
-      // shadow stores no credentials of its own — it reuses what each CLI already has,
-      // so "auth" is really a report on those two, plus how to fix each one.
-      const results = await Promise.all(
-        (['agy', 'claude'] as const).map(async (name) => ({
-          name,
-          health: await providerFor(name).health(),
-        })),
-      );
+      // Bare `shadow auth` reports all three accounts. Invalidate first so this is a
+      // real check rather than a replay of whatever was cached earlier this process.
+      invalidateAuth();
+      const statuses = await accountStatuses();
       let allOk = true;
-      for (const { name, health } of results) {
-        allOk &&= health.ok;
-        process.stdout.write(`${health.ok ? 'ok  ' : 'FAIL'} ${name}: ${health.detail}\n`);
-        if (!health.ok) {
-          process.stdout.write(
-            name === 'agy'
-              ? '     fix: run `agy` once and sign in to your Google account\n'
-              : '     fix: run `claude` once and sign in, or set ANTHROPIC_API_KEY\n',
-          );
+      for (const account of ACCOUNTS) {
+        const status = statuses.get(account.id)!;
+        allOk &&= status.signedIn;
+        process.stdout.write(
+          `${status.signedIn ? 'ok  ' : '    '} ${account.label.padEnd(12)} ${status.detail}\n`,
+        );
+        if (!status.signedIn && account.signIn.kind === 'spawn') {
+          process.stdout.write(`     fix: ${account.signIn.hint}\n`);
         }
       }
       return allOk ? 0 : 1;

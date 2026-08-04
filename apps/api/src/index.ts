@@ -19,11 +19,6 @@ app.post('/api/validate-license', async (c) => {
     return c.json({ valid: false, error: 'License key is required' }, 400);
   }
 
-  // Hardcoded fallback/test key
-  if (key === 'TEST-PRO-KEY') {
-    return c.json({ valid: true, tier: 'pro', status: 'active', expires_at: null });
-  }
-
   // Validate against Cloudflare D1
   const license = await c.env.DB.prepare('SELECT * FROM license_keys WHERE license_key = ?')
     .bind(key)

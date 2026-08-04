@@ -64,8 +64,7 @@ export async function listModels(): Promise<ModelChoice[]> {
     new ClaudeProvider().models().catch(() => [] as string[]),
   ]);
 
-  // Unify Agy models: remove effort suffixes to prevent duplicates, as effort is now controlled separately
-  agy = Array.from(new Set(agy.map(id => id.replace(/-(low|medium|high|xhigh|max)$/i, ''))));
+  // Keep Agy models exactly as returned by the backend so users only see valid model+effort combinations
 
   const choices = [
     ...claude.map((id) => describe(id, 'claude')),

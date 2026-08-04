@@ -84,17 +84,22 @@ export class AgyProvider implements Provider {
       prompt,
       '--output-format',
       'stream-json',
-      '--model',
-      req.model ?? this.defaultModel,
-      '--print-timeout',
-      this.printTimeout,
     ];
+    const targetModel = req.model ?? this.defaultModel;
+    args.push('--model', targetModel);
+    
+    args.push('--print-timeout', this.printTimeout);
+    
     if (sessionRef) args.push('--conversation', sessionRef);
     if (req.plan) args.push('--mode', 'plan');
-    if (req.effort) {
-      args.push('--effort', req.effort);
-    } else {
-      args.push('--effort', 'medium');
+    
+    const hasEffortSuffix = /-(low|medium|high|xhigh|max)$/i.test(targetModel);
+    if (!hasEffortSuffix) {
+      if (req.effort) {
+        args.push('--effort', req.effort);
+      } else {
+        args.push('--effort', 'medium');
+      }
     }
     for (const dir of req.addDirs ?? []) args.push('--add-dir', dir);
     // Prompting is always off, without exception. A spawned agy has no terminal, so

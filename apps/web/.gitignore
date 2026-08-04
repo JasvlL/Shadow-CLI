@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# generated tailwind output (superseded by postcss.config.mjs)
+/src/app/tailwind.css

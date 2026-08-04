@@ -86,6 +86,42 @@ export async function summarize(
   }
 }
 
+/**
+ * Compact a transcript on demand, on the *currently active* provider/model —
+ * unlike `summarize()`, which always defers to the non-leading provider so the
+ * summary is ready before a handoff. `/compact` has no handoff pending; it just
+ * wants the active session's own model to shrink its own history.
+ */
+export async function compactTranscript(
+  turns: TurnRecord[],
+  provider: ProviderId,
+  model: string,
+  cwd: string,
+  opts: { signal?: AbortSignal } = {},
+): Promise<SummaryResult | null> {
+  if (turns.length === 0) return null;
+
+  const client = provider === 'agy' ? new AgyProvider() : new ClaudeProvider();
+
+  try {
+    const text = await collectText(
+      client.run({
+        prompt: `${PROMPT}${formatTurns(turns, 40_000)}`,
+        cwd,
+        model,
+        skipPermissions: true,
+        sandbox: true,
+        disallowedTools: ['Bash', 'Write', 'Edit', 'Task', 'Agent'],
+        signal: opts.signal,
+      }),
+    );
+    const trimmed = text.trim();
+    return trimmed ? { text: trimmed, by: provider, covers: turns.length } : null;
+  } catch {
+    return null;
+  }
+}
+
 /** How many turns must accumulate past the verbatim window before re-summarizing. */
 export const SUMMARY_REFRESH_EVERY = 4;
 

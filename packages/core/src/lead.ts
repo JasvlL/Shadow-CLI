@@ -36,6 +36,8 @@ export interface LeadOptions {
   pluginPaths?: string[];
   /** Resolved project rules, appended to the lead system prompt. Set by runLead. */
   systemPromptExtra?: string;
+  /** Extra directories the lead may operate in, beyond `cwd`. Set via `/add-dir`. */
+  addDirs?: string[];
   /** Plan first, execute nothing. */
   plan?: boolean;
   /** Why the provider changed, which the handoff block states explicitly. */
@@ -195,6 +197,7 @@ function runClaudeLead(prompt: string, opts: LeadOptions): AsyncIterable<ShadowE
     model: opts.model,
     systemPrompt: withExtra(LEAD_SYSTEM_PROMPT, opts.systemPromptExtra),
     disallowedTools: LEAD_DISALLOWED_TOOLS,
+    addDirs: opts.addDirs,
     skills: opts.skills ?? 'all',
     pluginPaths: opts.pluginPaths,
     plan: opts.plan,
@@ -226,7 +229,7 @@ function runAgyLead(prompt: string, opts: LeadOptions): AsyncIterable<ShadowEven
     model: opts.model,
     effort: opts.effort,
     systemPrompt: withExtra(LEAD_SYSTEM_PROMPT, opts.systemPromptExtra),
-    addDirs: [opts.cwd],
+    addDirs: [opts.cwd, ...(opts.addDirs ?? [])],
     // AgyProvider always disables agy's own prompting — a spawned process cannot ask.
     // Permissions for this lead are enforced by the PreToolUse hook instead.
     sandbox: false,

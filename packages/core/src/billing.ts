@@ -59,6 +59,17 @@ export function saveLicense(status: LicenseStatus) {
   }
 }
 
+export function clearLicense(): LicenseStatus {
+  try {
+    if (fs.existsSync(LICENSE_FILE)) {
+      fs.unlinkSync(LICENSE_FILE);
+    }
+  } catch (e) {
+    // Ignore delete errors
+  }
+  return { key: '', active: false, tier: 'free' };
+}
+
 /**
  * Validates a Lemon Squeezy license key via Shadow API.
  */

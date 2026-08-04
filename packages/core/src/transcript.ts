@@ -119,6 +119,19 @@ export async function readTranscript(path: string): Promise<TurnRecord[]> {
   return turnsFromLines(text.split(/\r?\n/));
 }
 
+/** Render the full transcript as human-readable Markdown, for `/export`. */
+export function renderTranscriptMarkdown(turns: TurnRecord[]): string {
+  const sections = turns.map((turn) => {
+    const heading = turn.role === 'user' ? '## User' : `## Assistant (${turn.provider})`;
+    const tools =
+      turn.tools.length > 0
+        ? `\n\n_Tools: ${turn.tools.map((t) => t.summary).join(', ')}_`
+        : '';
+    return `${heading}\n\n${turn.text.trim()}${tools}`;
+  });
+  return sections.join('\n\n---\n\n');
+}
+
 /** Render turns as plain dialogue, newest last, within a character budget. */
 export function formatTurns(turns: TurnRecord[], budget = 12_000): string {
   const blocks = turns.map((turn) => {

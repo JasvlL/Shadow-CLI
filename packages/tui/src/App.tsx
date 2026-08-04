@@ -16,6 +16,13 @@ import {
   runHooks,
   runLead,
   loadLicense,
+  validateLicenseKey,
+  clearLicense,
+  compactTranscript,
+  readTranscript,
+  renderTranscriptMarkdown,
+  findRuleFiles,
+  formatRules,
   type ModelChoice,
 } from '@shadow/core';
 import { discoverSkillRoots, loadSkills } from '@shadow/skills';
@@ -66,10 +73,20 @@ const SLASH_COMMANDS: Array<[string, string]> = [
   ['/agents', 'list agents and their providers'],
   ['/provider', 'switch lead provider (claude | agy)'],
   ['/model', 'pick a model and reasoning effort'],
+  ['/effort', 'pick reasoning effort'],
   ['/skill', 'manage shadow skills (sync | new <name> | lint)'],
   ['/mcp', 'manage MCP servers for the current provider'],
   ['/plan', 'toggle plan mode — design without executing'],
   ['/usage', 'quota & cost overlay (esc to close)'],
+  ['/cost', 'quota & spend so far this session'],
+  ['/login', 'unlock shadow PRO with a license key'],
+  ['/logout', 'clear the stored license and return to free'],
+  ['/compact', 'summarize the transcript to free up context'],
+  ['/config', 'show the current permission config'],
+  ['/memory', 'show resolved project rule files'],
+  ['/export', 'save the session transcript (md | json)'],
+  ['/permissions', 'show the allow/deny/auto-approve gate'],
+  ['/add-dir', 'let agents operate in another directory too'],
   ['/clear', 'clear the transcript'],
   ['/help', 'this list'],
   ['/exit', 'quit'],
@@ -95,6 +112,7 @@ export function App({
   const [pickingModel, setPickingModel] = useState(false);
   const [pickingEffort, setPickingEffort] = useState(false);
   const [showUsage, setShowUsage] = useState(false);
+  const [extraDirs, setExtraDirs] = useState<string[]>([]);
 
   /**
    * Apply a model choice. Selecting one on the other plan is a provider switch, and
@@ -370,6 +388,120 @@ export function App({
           committed: [{ kind: 'header', cwd, target: `${provider}${leadModel ? '/' + leadModel : ''}` }],
         }));
         return;
+      case 'login': {
+        if (!args[0]) {
+          setState((s) => say(s, 'usage: /login <key>', 'error'));
+          return;
+        }
+        setState((s) => ({ ...s, busy: true }));
+        void validateLicenseKey(args[0]).then((result) => {
+          setState((s) => {
+            const s1 = say(
+              s,
+              result.active ? 'success! Shadow PRO unlocked.' : 'invalid license key.',
+              result.active ? undefined : 'error',
+            );
+            return { ...s1, busy: false, license: result.tier };
+          });
+        });
+        return;
+      }
+      case 'logout': {
+        clearLicense();
+        setState((s) => ({ ...say(s, 'logged out — back to Shadow Free.'), license: 'free' }));
+        return;
+      }
+      case 'compact': {
+        setState((s) => ({ ...s, busy: true }));
+        void (async () => {
+          const turns = await readTranscript(session.path);
+          const result = await compactTranscript(turns, provider, leadModel ?? DEFAULT_MODEL[provider], cwd);
+          setState((s) => {
+            if (!result) return { ...say(s, 'compact failed — transcript left as-is.', 'error'), busy: false };
+            session.setSummary(result);
+            return { ...say(s, `transcript compacted (${result.covers} turns summarized by ${result.by}).`), busy: false };
+          });
+        })();
+        return;
+      }
+      case 'config': {
+        void loadPermissionConfig(cwd).then((config) => {
+          setState((s) =>
+            say(
+              s,
+              [
+                `config: ${cwd}/.shadow/config.json`,
+                `allow: ${config.allow.join(', ') || '(none)'}`,
+                `deny: ${config.deny.join(', ') || '(none)'}`,
+                `autoApprove: ${config.autoApprove ? 'on' : 'off'}`,
+              ].join('\n'),
+            ),
+          );
+        });
+        return;
+      }
+      case 'memory': {
+        void findRuleFiles(cwd).then((files) => {
+          setState((s) =>
+            say(
+              s,
+              files.length === 0
+                ? 'no rule files found (SHADOW.md / AGENTS.md / CLAUDE.md / GEMINI.md)'
+                : formatRules(files),
+            ),
+          );
+        });
+        return;
+      }
+      case 'export': {
+        const format = args[0] === 'json' ? 'json' : 'md';
+        setState((s) => ({ ...s, busy: true }));
+        void (async () => {
+          const turns = await readTranscript(session.path);
+          const content = format === 'json' ? JSON.stringify(turns, null, 2) : renderTranscriptMarkdown(turns);
+          const { writeFile } = await import('node:fs/promises');
+          const path = await import('node:path');
+          const outPath = path.join(cwd, `shadow-export-${session.id}.${format}`);
+          await writeFile(outPath, content, 'utf8');
+          setState((s) => ({ ...say(s, `exported to ${outPath}`), busy: false }));
+        })();
+        return;
+      }
+      case 'permissions': {
+        void loadPermissionConfig(cwd).then((config) => {
+          setState((s) =>
+            say(
+              s,
+              [
+                `allow: ${config.allow.join(', ') || '(none)'}`,
+                `deny: ${config.deny.join(', ') || '(none)'}`,
+                `autoApprove: ${config.autoApprove ? 'on' : 'off'}`,
+                `edit these in ${cwd}/.shadow/config.json`,
+              ].join('\n'),
+            ),
+          );
+        });
+        return;
+      }
+      case 'add-dir': {
+        const target = args[0];
+        if (!target) {
+          setState((s) => say(s, 'usage: /add-dir <path>', 'error'));
+          return;
+        }
+        void (async () => {
+          const path = await import('node:path');
+          const fs = await import('node:fs');
+          const resolved = path.isAbsolute(target) ? target : path.join(cwd, target);
+          if (!fs.existsSync(resolved)) {
+            setState((s) => say(s, `no such directory: ${resolved}`, 'error'));
+            return;
+          }
+          setExtraDirs((dirs) => (dirs.includes(resolved) ? dirs : [...dirs, resolved]));
+          setState((s) => say(s, `added ${resolved} — agents can now operate there too`));
+        })();
+        return;
+      }
       case 'exit':
       case 'quit':
         exit();
@@ -404,6 +536,7 @@ export function App({
         orchestrator,
         resume: resumedRef.current,
         approve: gateRef.current ?? undefined,
+        addDirs: extraDirs,
         plan: planMode,
         stream: true,
         handoffReason: reason,

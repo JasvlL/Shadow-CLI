@@ -8,4 +8,5 @@ mylog.txt
 *.js
 !packages/*/src/**/*.js
 !scratch*.js
+!apps/*/postcss.config.mjs
 .env

@@ -1,10 +1,9 @@
 export default function Home() {
-  // Trigger Vercel Build 2
   return (
     <div className="flex flex-col min-h-screen bg-[#050505] text-white selection:bg-[#f0f] selection:text-white">
       {/* Background Glow */}
       <div className="fixed top-[-20%] left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-fuchsia-900/30 rounded-full blur-[120px] pointer-events-none -z-10"></div>
-      
+
       {/* Navigation */}
       <nav className="flex items-center justify-between p-6 max-w-6xl mx-auto w-full z-10">
         <div className="flex items-center gap-2">
@@ -27,14 +26,14 @@ export default function Home() {
           </span>
           v0.1.0 is now live
         </div>
-        
+
         <h1 className="max-w-4xl text-5xl font-extrabold tracking-tight sm:text-7xl mb-8 leading-tight">
           The Ultimate Agentic <br />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#f0f] to-purple-400 text-glow">
             Orchestrator
           </span> for your Terminal
         </h1>
-        
+
         <p className="max-w-2xl text-lg text-zinc-400 mb-10 leading-relaxed">
           Stop context-switching. Delegate tasks across Claude, Gemini, and local models seamlessly from your CLI. Keep your flow unbroken.
         </p>
@@ -47,7 +46,7 @@ export default function Home() {
             Get PRO - $9.99/mo
           </a>
           <div className="flex items-center w-full sm:w-auto gap-3 px-6 py-4 text-sm font-mono text-zinc-300 border border-zinc-800 rounded-full bg-zinc-900/50 backdrop-blur-sm hover:border-zinc-700 transition">
-            <span className="text-zinc-500">$</span> 
+            <span className="text-zinc-500">$</span>
             <span>npm i -g shadow-cli</span>
           </div>
         </div>
@@ -67,7 +66,7 @@ export default function Home() {
               <span className="text-cyan-400">◆ Welcome to Shadow v0.1.0</span>
             </div>
             <div>model     <span className="text-white">sonnet on claude</span></div>
-            <br/>
+            <br />
             <div><span className="text-[#f0f]">❯</span> /usage</div>
             <div><span className="text-[#f0f] font-bold">💎 SHADOW USAGE TRACKER (PRO)</span></div>
             <div>Claude cost (this session): <span className="text-white">$0.0042</span></div>
@@ -129,7 +128,7 @@ export default function Home() {
               Free forever
             </div>
           </div>
-          
+
           {/* PRO */}
           <div className="p-8 rounded-3xl border-2 border-[#f0f] bg-gradient-to-b from-[#f0f]/10 to-transparent flex flex-col relative transform md:-translate-y-4 shadow-[0_0_40px_rgba(255,0,255,0.1)]">
             <div className="absolute top-0 right-8 transform -translate-y-1/2 bg-[#f0f] text-black text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">

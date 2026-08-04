@@ -1,3 +1,12 @@
+/**
+ * Paddle checkout link, set in the Vercel dashboard once the product exists.
+ *
+ * Read at build time so connecting checkout is an environment change, not a deploy of
+ * new code — and so the button degrades to "opening soon" instead of a dead link while
+ * the value is missing.
+ */
+const CHECKOUT_URL = process.env.NEXT_PUBLIC_PADDLE_CHECKOUT_URL;
+
 export default function Home() {
   return (
     <div className="flex flex-col min-h-screen bg-[#050505] text-white selection:bg-[#f0f] selection:text-white">
@@ -13,6 +22,7 @@ export default function Home() {
         <div className="flex gap-6 items-center">
           <a href="#features" className="text-sm text-zinc-400 hover:text-white transition">Features</a>
           <a href="#pricing" className="text-sm text-zinc-400 hover:text-white transition">Pricing</a>
+          <a href="/sessions" className="text-sm text-zinc-400 hover:text-white transition">Sessions</a>
           <a href="https://github.com/JasvlL/Shadow-CLI" target="_blank" rel="noreferrer" className="text-sm font-medium border border-zinc-800 px-4 py-2 rounded-full hover:bg-zinc-800 transition">GitHub</a>
         </div>
       </nav>
@@ -47,7 +57,7 @@ export default function Home() {
           </a>
           <div className="flex items-center w-full sm:w-auto gap-3 px-6 py-4 text-sm font-mono text-zinc-300 border border-zinc-800 rounded-full bg-zinc-900/50 backdrop-blur-sm hover:border-zinc-700 transition">
             <span className="text-zinc-500">$</span>
-            <span>npm i -g shadow-cli</span>
+            <span>npm i -g @jasvll/shadow-cli</span>
           </div>
         </div>
 
@@ -118,11 +128,12 @@ export default function Home() {
             <h3 className="text-xl font-semibold mb-2">Shadow Free</h3>
             <div className="text-4xl font-bold mb-6">$0 <span className="text-lg text-zinc-500 font-normal">forever</span></div>
             <ul className="flex-1 space-y-4 mb-8 text-zinc-400">
-              <li className="flex items-center gap-3"><span className="text-green-500">✓</span> Standard Provider Switching</li>
-              <li className="flex items-center gap-3"><span className="text-green-500">✓</span> Basic local session tracker</li>
-              <li className="flex items-center gap-3"><span className="text-green-500">✓</span> Community Plugins</li>
-              <li className="flex items-center gap-3 opacity-30"><span className="text-zinc-600">✕</span> Live API Quota Sync</li>
-              <li className="flex items-center gap-3 opacity-30"><span className="text-zinc-600">✕</span> Local AES-256 Encryption</li>
+              <li className="flex items-center gap-3"><span className="text-green-500">✓</span> Switch provider mid-session, keeping context</li>
+              <li className="flex items-center gap-3"><span className="text-green-500">✓</span> Every model on the plans you sign in to</li>
+              <li className="flex items-center gap-3"><span className="text-green-500">✓</span> Permission gate, skills and project rules</li>
+              <li className="flex items-center gap-3"><span className="text-green-500">✓</span> Session history and transcript export</li>
+              <li className="flex items-center gap-3 opacity-30"><span className="text-zinc-600">✕</span> Multi-agent delegation</li>
+              <li className="flex items-center gap-3 opacity-30"><span className="text-zinc-600">✕</span> Live quota &amp; cost tracker</li>
             </ul>
             <div className="w-full py-3 text-center rounded-xl border border-zinc-800 text-zinc-400 bg-zinc-900/50">
               Free forever
@@ -138,14 +149,24 @@ export default function Home() {
             <div className="text-4xl font-bold mb-6 text-white">$9.99 <span className="text-lg text-zinc-400 font-normal">/mo</span></div>
             <ul className="flex-1 space-y-4 mb-8 text-zinc-300">
               <li className="flex items-center gap-3"><span className="text-[#f0f]">✓</span> Everything in Free</li>
-              <li className="flex items-center gap-3"><span className="text-[#f0f]">✓</span> <strong className="text-white">Live API Quota Sync</strong></li>
-              <li className="flex items-center gap-3"><span className="text-[#f0f]">✓</span> <strong className="text-white">Local AES-256 Encryption</strong></li>
-              <li className="flex items-center gap-3"><span className="text-[#f0f]">✓</span> Priority Support</li>
-              <li className="flex items-center gap-3"><span className="text-[#f0f]">✓</span> Early access to parallel agents</li>
+              <li className="flex items-center gap-3"><span className="text-[#f0f]">✓</span> <strong className="text-white">Multi-agent delegation</strong> — run subagents in parallel, across both plans</li>
+              <li className="flex items-center gap-3"><span className="text-[#f0f]">✓</span> <strong className="text-white">Live quota &amp; cost tracker</strong> for both subscriptions</li>
+              <li className="flex items-center gap-3"><span className="text-[#f0f]">✓</span> Priority support</li>
             </ul>
-            <a href="#" className="w-full py-3 text-center rounded-xl bg-[#f0f] text-black font-bold glow-magenta hover:bg-fuchsia-500 transition">
-              Upgrade to PRO
-            </a>
+            {CHECKOUT_URL ? (
+              <a
+                href={CHECKOUT_URL}
+                className="w-full py-3 text-center rounded-xl bg-[#f0f] text-black font-bold glow-magenta hover:bg-fuchsia-500 transition"
+              >
+                Upgrade to PRO
+              </a>
+            ) : (
+              // No dead "buy" button: until checkout is connected, say so rather than
+              // taking a click that goes nowhere.
+              <div className="w-full py-3 text-center rounded-xl border border-[#f0f]/40 text-[#f0f] font-semibold">
+                Checkout opening soon
+              </div>
+            )}
           </div>
         </div>
       </section>

@@ -9,7 +9,7 @@ import crypto from 'node:crypto';
  * This has to be a real deployed URL: a client machine has no local worker, so a
  * localhost default silently downgrades every paying customer to free.
  */
-const PRODUCTION_API_URL = 'https://shadow-api.jasvll.workers.dev';
+const PRODUCTION_API_URL = 'https://shadow-api.jeferson-zelayae.workers.dev';
 
 const SHADOW_DIR = path.join(os.homedir(), '.shadow');
 const LICENSE_FILE = path.join(SHADOW_DIR, 'license.json');

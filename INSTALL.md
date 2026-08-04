@@ -1,7 +1,10 @@
 # Installing Shadow
 
-Shadow is not on npm yet, so it installs from source. These steps were run end to end
+Shadow is not published yet, so it installs from source. These steps were run end to end
 from a clean clone.
+
+When it does go up, the package is **`@jasvll/shadow-cli`** — note the scope. The
+unscoped `shadow-cli` on npm is an unrelated project by someone else; do not install it.
 
 ## Requirements
 

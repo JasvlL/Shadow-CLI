@@ -1,14 +1,35 @@
 {
-  "name": "@shadow/cli",
+  "name": "@jasvll/shadow-cli",
   "version": "0.1.0",
   "description": "Multi-agent, multi-provider terminal IDE — one orchestrator over Claude and Gemini",
   "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JasvlL/Shadow-CLI.git"
+  },
+  "homepage": "https://github.com/JasvlL/Shadow-CLI#readme",
+  "keywords": [
+    "cli",
+    "ai",
+    "agent",
+    "claude",
+    "gemini",
+    "terminal",
+    "ide"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
   "bin": {
     "shadow": "./dist/bin.js"
   },
   "files": [
     "dist"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch"

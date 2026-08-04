@@ -299,6 +299,14 @@ export function App({
           setState((s) => say(s, `no model matches "${args[0]}" — try /model`, 'error'));
           return;
         }
+        
+        let nextEffort = state.effort;
+        const validEfforts = match.efforts ?? ['low', 'medium', 'high'];
+        if (nextEffort && !validEfforts.includes(nextEffort)) {
+          nextEffort = validEfforts[0];
+          setState((s) => ({ ...s, effort: nextEffort }));
+        }
+        
         applyModel(match);
         return;
       }
@@ -513,6 +521,12 @@ export function App({
           currentEffort={state.effort}
           onSelect={(choice) => {
             setPickingModel(false);
+            let nextEffort = state.effort;
+            const validEfforts = choice.efforts ?? ['low', 'medium', 'high'];
+            if (nextEffort && !validEfforts.includes(nextEffort)) {
+              nextEffort = validEfforts[0];
+            }
+            setState((s) => ({ ...s, effort: nextEffort }));
             applyModel(choice);
           }}
           onEffortChange={(effort) => {

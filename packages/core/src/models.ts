@@ -19,6 +19,8 @@ export interface ModelChoice {
   hint: string;
   /** Rough speed/cost tier, used for ordering and for the picker's grouping. */
   tier: 'fast' | 'balanced' | 'deep';
+  /** Valid efforts for this model. */
+  efforts?: ('low' | 'medium' | 'high')[];
 }
 
 /** Recognise a model id well enough to describe it without hardcoding a full table. */
@@ -64,11 +66,27 @@ export async function listModels(): Promise<ModelChoice[]> {
     new ClaudeProvider().models().catch(() => [] as string[]),
   ]);
 
-  // Keep Agy models exactly as returned by the backend so users only see valid model+effort combinations
+  // Parse Agy models to extract their base ID and supported efforts
+  const agyEfforts = new Map<string, ('low' | 'medium' | 'high')[]>();
+  for (const id of agy) {
+    const match = id.match(/-(low|medium|high|xhigh|max)$/i);
+    const baseId = match ? id.slice(0, match.index) : id;
+    const effort = match ? match[1].toLowerCase() : 'medium';
+    if (['low', 'medium', 'high'].includes(effort)) {
+      if (!agyEfforts.has(baseId)) agyEfforts.set(baseId, []);
+      if (!agyEfforts.get(baseId)!.includes(effort as any)) {
+        agyEfforts.get(baseId)!.push(effort as any);
+      }
+    }
+  }
 
-  const choices = [
+  const choices: ModelChoice[] = [
     ...claude.map((id) => describe(id, 'claude')),
-    ...agy.map((id) => describe(id, 'agy')),
+    ...Array.from(agyEfforts.keys()).map((id) => {
+      const choice = describe(id, 'agy');
+      choice.efforts = agyEfforts.get(id);
+      return choice;
+    }),
   ];
 
   // Claude's aliases (`opus`, `sonnet`, `haiku`) and its full ids describe the same

@@ -48,11 +48,21 @@ export function ModelPicker({
     if (key.escape || (key.ctrl && input === 'c')) return onCancel();
     
     if (key.leftArrow || key.rightArrow) {
-      const eIdx = EFFORT_CHOICES.indexOf(currentEffort);
-      const nextIdx = key.leftArrow 
-        ? (eIdx - 1 + EFFORT_CHOICES.length) % EFFORT_CHOICES.length 
-        : (eIdx + 1) % EFFORT_CHOICES.length;
-      onEffortChange(EFFORT_CHOICES[nextIdx]!);
+      const choice = choices[index];
+      const validEfforts = choice?.efforts ?? EFFORT_CHOICES;
+      const eIdx = validEfforts.indexOf(currentEffort);
+      
+      let nextIdx;
+      if (eIdx === -1) {
+        nextIdx = 0;
+      } else {
+        nextIdx = key.leftArrow 
+          ? (eIdx - 1 + validEfforts.length) % validEfforts.length 
+          : (eIdx + 1) % validEfforts.length;
+      }
+      if (validEfforts.length > 0) {
+        onEffortChange(validEfforts[nextIdx]!);
+      }
       return;
     }
 
